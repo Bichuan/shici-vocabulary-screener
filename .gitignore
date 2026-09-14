@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.vite/
+work/
+*.local
+*.log
+.env
+.env.*
+test-results/
+playwright-report/
+release/
+build/electron-dist/

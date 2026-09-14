@@ -1,0 +1,26 @@
+{
+  "sourceCount": 5530,
+  "importedCount": 5220,
+  "uniqueCount": 5530,
+  "emptyMeaningCount": 0,
+  "duplicateCount": 0,
+  "errorCount": 0,
+  "warningCount": 2,
+  "issues": [
+    {
+      "severity": "warning",
+      "code": "CASE_VARIANT",
+      "row": 5421,
+      "word": "March",
+      "message": "与 march 仅大小写不同；保留为独立词条"
+    },
+    {
+      "severity": "warning",
+      "code": "CASE_VARIANT",
+      "row": 5425,
+      "word": "May",
+      "message": "与 may 仅大小写不同；保留为独立词条"
+    }
+  ],
+  "excludedCount": 310
+}

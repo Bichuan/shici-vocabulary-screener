@@ -1,0 +1,18 @@
+{
+  "说明": "人工按基础日常词义筛选，供用户审核；不修改正式词库，不代表官方词频或用户已掌握。大小写按原词库保留。",
+  "分组": {
+    "冠词、代词与限定词": "a an the I you he she it we they me him her us them my your his its our their mine yours hers ours theirs this that these those some any all every each both other another such",
+    "基础连接词、介词与疑问词": "and or but if because so than as of to in on at by for with from into out up down over under before after between near about what who whose whom which when where why how",
+    "数字与数量": "zero one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen seventeen eighteen nineteen twenty thirty forty fifty sixty seventy eighty ninety hundred thousand first second third half",
+    "时间、星期与月份": "time day week month year today tomorrow yesterday morning afternoon evening night hour minute Sunday Monday Tuesday Wednesday Thursday Friday Saturday January February March April May June July August September October November December birthday weekend",
+    "家庭、人物与职业": "family father mother parent son daughter brother sister husband wife grandfather grandmother uncle aunt cousin baby child boy girl man woman friend student teacher doctor nurse driver worker farmer people name age",
+    "身体与健康": "body head face eye ear nose mouth tooth tongue hair hand arm finger leg foot knee back heart blood sick ill health hospital medicine",
+    "食物与饮品": "apple banana orange pear grape peach lemon fruit vegetable potato tomato carrot onion rice bread noodle egg meat beef pork chicken fish milk water tea coffee juice sugar salt cake breakfast lunch dinner meal hungry thirsty",
+    "动物与自然": "animal cat dog bird duck cow pig horse sheep goat rabbit tiger lion elephant monkey panda mouse tree flower grass leaf sun moon star sky rain snow wind sea river mountain",
+    "家居与日常物品": "home house room kitchen bedroom bathroom door window wall floor roof bed chair desk table lamp light clock watch telephone TV radio computer bag box cup glass bottle plate bowl knife spoon key soap towel",
+    "学校与学习": "school classroom class lesson book pen pencil paper ruler blackboard desk exam homework question answer word English Chinese language read write learn study teach spell letter story music picture page",
+    "地点、交通与衣着": "city town village street road park shop supermarket hotel library station airport bus car train plane bike boat ship taxi ticket map country shirt coat dress skirt shoe sock hat clothes wear",
+    "基础形容词与副词": "good bad big small large long short tall high low old young new hot cold warm cool happy sad beautiful nice easy difficult clean dirty white black red blue green yellow brown pink grey very too also again here there yes no not",
+    "基础动作与常用动词": "be have do can will may must go come get give take make eat drink sleep walk run sit stand see look hear listen say speak talk tell ask know think like love want need buy sell open close play work help wash cook sing dance swim fly stop start live meet find put let use try"
+  }
+}

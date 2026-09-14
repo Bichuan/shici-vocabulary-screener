@@ -1,0 +1,78 @@
+{
+  "name": "vocabulary-screener",
+  "productName": "拾词",
+  "description": "面向考研学生的本地英语词汇筛查器",
+  "author": "拾词",
+  "private": true,
+  "version": "0.3.0",
+  "main": "electron/main.cjs",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "import:vocabulary": "node scripts/import-vocabulary.ts",
+    "check:questions": "node scripts/check-questions.ts",
+    "typecheck": "vue-tsc --noEmit",
+    "test": "vitest run tests",
+    "test:e2e": "npm run build && playwright test",
+    "build": "npm run import:vocabulary && npm run check:questions && npm run typecheck && vite build",
+    "preview": "vite preview",
+    "desktop:icon": "python scripts/generate-desktop-icon.py",
+    "desktop:dev": "npm run build && electron .",
+    "package:win": "npm run build && npm run desktop:icon && electron-builder --win nsis"
+  },
+  "engines": {
+    "node": ">=24.13.0"
+  },
+  "dependencies": {
+    "vue": "3.5.42"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0",
+    "@types/node": "22.20.2",
+    "@vitejs/plugin-vue": "6.0.8",
+    "electron": "^44.3.0",
+    "electron-builder": "^26.15.3",
+    "fake-indexeddb": "6.2.5",
+    "typescript": "5.9.3",
+    "vite": "8.3.0",
+    "vitest": "5.0.0",
+    "vue-tsc": "3.3.11"
+  },
+  "build": {
+    "appId": "com.shici.vocabulary-screener",
+    "productName": "拾词",
+    "electronDist": "build/electron-dist",
+    "artifactName": "拾词-安装程序-${version}.${ext}",
+    "asar": true,
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "build/icon.ico",
+      "package.json"
+    ],
+    "win": {
+      "icon": "build/icon.ico",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "createDesktopShortcut": "always",
+      "createStartMenuShortcut": true,
+      "shortcutName": "拾词",
+      "runAfterFinish": true,
+      "deleteAppDataOnUninstall": false
+    }
+  }
+}

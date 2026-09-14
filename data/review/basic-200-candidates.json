@@ -1,0 +1,1451 @@
+{
+  "purpose": "原 456 词的人工基础词精选，仅供审核，未删除正式词库。",
+  "sourceCommit": "70dc6b68c855f21e666a7a291ff8ead5ca1f7b44",
+  "parentCandidateCount": 456,
+  "candidateCount": 200,
+  "remainingIfRemoved": 5330,
+  "categories": [
+    {
+      "category": "基础功能词与代词",
+      "count": 40
+    },
+    {
+      "category": "数字 1—10",
+      "count": 10
+    },
+    {
+      "category": "日常时间与星期",
+      "count": 20
+    },
+    {
+      "category": "家庭与常见人物",
+      "count": 20
+    },
+    {
+      "category": "身体部位",
+      "count": 10
+    },
+    {
+      "category": "常见食物与饮品",
+      "count": 20
+    },
+    {
+      "category": "动物与自然",
+      "count": 20
+    },
+    {
+      "category": "学校与日常物品",
+      "count": 20
+    },
+    {
+      "category": "基础形容词与颜色",
+      "count": 20
+    },
+    {
+      "category": "基础日常动作",
+      "count": 20
+    }
+  ],
+  "words": [
+    {
+      "id": "netem:a",
+      "spelling": "a",
+      "meaning": "一、每一",
+      "category": "基础功能词与代词",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:the",
+      "spelling": "the",
+      "meaning": "这个、这些",
+      "category": "基础功能词与代词",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:I",
+      "spelling": "I",
+      "meaning": "我",
+      "category": "基础功能词与代词",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:you",
+      "spelling": "you",
+      "meaning": "你",
+      "category": "基础功能词与代词",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:he",
+      "spelling": "he",
+      "meaning": "他",
+      "category": "基础功能词与代词",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:she",
+      "spelling": "she",
+      "meaning": "她",
+      "category": "基础功能词与代词",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:it",
+      "spelling": "it",
+      "meaning": "它",
+      "category": "基础功能词与代词",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:we",
+      "spelling": "we",
+      "meaning": "我们",
+      "category": "基础功能词与代词",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:they",
+      "spelling": "they",
+      "meaning": "他们",
+      "category": "基础功能词与代词",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:me",
+      "spelling": "me",
+      "meaning": "我",
+      "category": "基础功能词与代词",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:him",
+      "spelling": "him",
+      "meaning": "他",
+      "category": "基础功能词与代词",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:her",
+      "spelling": "her",
+      "meaning": "她的",
+      "category": "基础功能词与代词",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:us",
+      "spelling": "us",
+      "meaning": "我们",
+      "category": "基础功能词与代词",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:them",
+      "spelling": "them",
+      "meaning": "他们",
+      "category": "基础功能词与代词",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:my",
+      "spelling": "my",
+      "meaning": "我的",
+      "category": "基础功能词与代词",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:your",
+      "spelling": "your",
+      "meaning": "你的",
+      "category": "基础功能词与代词",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:his",
+      "spelling": "his",
+      "meaning": "他的",
+      "category": "基础功能词与代词",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:its",
+      "spelling": "its",
+      "meaning": "它的",
+      "category": "基础功能词与代词",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:our",
+      "spelling": "our",
+      "meaning": "我们的",
+      "category": "基础功能词与代词",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:their",
+      "spelling": "their",
+      "meaning": "他们的",
+      "category": "基础功能词与代词",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:and",
+      "spelling": "and",
+      "meaning": "和",
+      "category": "基础功能词与代词",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:or",
+      "spelling": "or",
+      "meaning": "或者、否则",
+      "category": "基础功能词与代词",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:but",
+      "spelling": "but",
+      "meaning": "但是",
+      "category": "基础功能词与代词",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:yes",
+      "spelling": "yes",
+      "meaning": "是",
+      "category": "基础功能词与代词",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:no",
+      "spelling": "no",
+      "meaning": "否定",
+      "category": "基础功能词与代词",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:not",
+      "spelling": "not",
+      "meaning": "不、没有",
+      "category": "基础功能词与代词",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:this",
+      "spelling": "this",
+      "meaning": "这",
+      "category": "基础功能词与代词",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:that",
+      "spelling": "that",
+      "meaning": "那",
+      "category": "基础功能词与代词",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:these",
+      "spelling": "these",
+      "meaning": "这些、这些人",
+      "category": "基础功能词与代词",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:those",
+      "spelling": "those",
+      "meaning": "那些",
+      "category": "基础功能词与代词",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:of",
+      "spelling": "of",
+      "meaning": "的",
+      "category": "基础功能词与代词",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:to",
+      "spelling": "to",
+      "meaning": "目的、终点",
+      "category": "基础功能词与代词",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:in",
+      "spelling": "in",
+      "meaning": "在…内",
+      "category": "基础功能词与代词",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:on",
+      "spelling": "on",
+      "meaning": "在…上、持续",
+      "category": "基础功能词与代词",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:at",
+      "spelling": "at",
+      "meaning": "在…位置",
+      "category": "基础功能词与代词",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:for",
+      "spelling": "for",
+      "meaning": "为了…、因为…",
+      "category": "基础功能词与代词",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:with",
+      "spelling": "with",
+      "meaning": "伴随",
+      "category": "基础功能词与代词",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:from",
+      "spelling": "from",
+      "meaning": "从…、起点",
+      "category": "基础功能词与代词",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:what",
+      "spelling": "what",
+      "meaning": "什么",
+      "category": "基础功能词与代词",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:how",
+      "spelling": "how",
+      "meaning": "如何",
+      "category": "基础功能词与代词",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:one",
+      "spelling": "one",
+      "meaning": "一个",
+      "category": "数字 1—10",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:two",
+      "spelling": "two",
+      "meaning": "二",
+      "category": "数字 1—10",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:three",
+      "spelling": "three",
+      "meaning": "三",
+      "category": "数字 1—10",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:four",
+      "spelling": "four",
+      "meaning": "四",
+      "category": "数字 1—10",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:five",
+      "spelling": "five",
+      "meaning": "五",
+      "category": "数字 1—10",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:six",
+      "spelling": "six",
+      "meaning": "六",
+      "category": "数字 1—10",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:seven",
+      "spelling": "seven",
+      "meaning": "七",
+      "category": "数字 1—10",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:eight",
+      "spelling": "eight",
+      "meaning": "八",
+      "category": "数字 1—10",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:nine",
+      "spelling": "nine",
+      "meaning": "九",
+      "category": "数字 1—10",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:ten",
+      "spelling": "ten",
+      "meaning": "十",
+      "category": "数字 1—10",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:today",
+      "spelling": "today",
+      "meaning": "在今天、现今",
+      "category": "日常时间与星期",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:tomorrow",
+      "spelling": "tomorrow",
+      "meaning": "明天、来日",
+      "category": "日常时间与星期",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:yesterday",
+      "spelling": "yesterday",
+      "meaning": "昨天",
+      "category": "日常时间与星期",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:morning",
+      "spelling": "morning",
+      "meaning": "早晨",
+      "category": "日常时间与星期",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:afternoon",
+      "spelling": "afternoon",
+      "meaning": "下午",
+      "category": "日常时间与星期",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:evening",
+      "spelling": "evening",
+      "meaning": "傍晚",
+      "category": "日常时间与星期",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:night",
+      "spelling": "night",
+      "meaning": "夜晚",
+      "category": "日常时间与星期",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:day",
+      "spelling": "day",
+      "meaning": "日子",
+      "category": "日常时间与星期",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:month",
+      "spelling": "month",
+      "meaning": "月",
+      "category": "日常时间与星期",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:year",
+      "spelling": "year",
+      "meaning": "年",
+      "category": "日常时间与星期",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:hour",
+      "spelling": "hour",
+      "meaning": "小时",
+      "category": "日常时间与星期",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:Sunday",
+      "spelling": "Sunday",
+      "meaning": "星期日",
+      "category": "日常时间与星期",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:Monday",
+      "spelling": "Monday",
+      "meaning": "星期一",
+      "category": "日常时间与星期",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:Tuesday",
+      "spelling": "Tuesday",
+      "meaning": "星期二",
+      "category": "日常时间与星期",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:Wednesday",
+      "spelling": "Wednesday",
+      "meaning": "星期三",
+      "category": "日常时间与星期",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:Thursday",
+      "spelling": "Thursday",
+      "meaning": "星期四",
+      "category": "日常时间与星期",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:Friday",
+      "spelling": "Friday",
+      "meaning": "星期五",
+      "category": "日常时间与星期",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:Saturday",
+      "spelling": "Saturday",
+      "meaning": "星期六",
+      "category": "日常时间与星期",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:birthday",
+      "spelling": "birthday",
+      "meaning": "生日",
+      "category": "日常时间与星期",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:weekend",
+      "spelling": "weekend",
+      "meaning": "周末",
+      "category": "日常时间与星期",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:father",
+      "spelling": "father",
+      "meaning": "父亲",
+      "category": "家庭与常见人物",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:mother",
+      "spelling": "mother",
+      "meaning": "妈妈",
+      "category": "家庭与常见人物",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:brother",
+      "spelling": "brother",
+      "meaning": "兄弟",
+      "category": "家庭与常见人物",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:sister",
+      "spelling": "sister",
+      "meaning": "姐妹",
+      "category": "家庭与常见人物",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:son",
+      "spelling": "son",
+      "meaning": "儿子、孩子",
+      "category": "家庭与常见人物",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:daughter",
+      "spelling": "daughter",
+      "meaning": "女儿",
+      "category": "家庭与常见人物",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:family",
+      "spelling": "family",
+      "meaning": "家庭",
+      "category": "家庭与常见人物",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:parent",
+      "spelling": "parent",
+      "meaning": "父母",
+      "category": "家庭与常见人物",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:baby",
+      "spelling": "baby",
+      "meaning": "宝贝",
+      "category": "家庭与常见人物",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:child",
+      "spelling": "child",
+      "meaning": "孩子",
+      "category": "家庭与常见人物",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:boy",
+      "spelling": "boy",
+      "meaning": "男孩",
+      "category": "家庭与常见人物",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:girl",
+      "spelling": "girl",
+      "meaning": "女孩",
+      "category": "家庭与常见人物",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:man",
+      "spelling": "man",
+      "meaning": "男人",
+      "category": "家庭与常见人物",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:woman",
+      "spelling": "woman",
+      "meaning": "女人",
+      "category": "家庭与常见人物",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:friend",
+      "spelling": "friend",
+      "meaning": "朋友",
+      "category": "家庭与常见人物",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:student",
+      "spelling": "student",
+      "meaning": "学生",
+      "category": "家庭与常见人物",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:teacher",
+      "spelling": "teacher",
+      "meaning": "教师",
+      "category": "家庭与常见人物",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:doctor",
+      "spelling": "doctor",
+      "meaning": "医生",
+      "category": "家庭与常见人物",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:nurse",
+      "spelling": "nurse",
+      "meaning": "护士、护理",
+      "category": "家庭与常见人物",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:name",
+      "spelling": "name",
+      "meaning": "名称、命名",
+      "category": "家庭与常见人物",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:eye",
+      "spelling": "eye",
+      "meaning": "眼睛",
+      "category": "身体部位",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:ear",
+      "spelling": "ear",
+      "meaning": "耳朵",
+      "category": "身体部位",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:nose",
+      "spelling": "nose",
+      "meaning": "鼻子",
+      "category": "身体部位",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:mouth",
+      "spelling": "mouth",
+      "meaning": "嘴",
+      "category": "身体部位",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:tooth",
+      "spelling": "tooth",
+      "meaning": "牙齿",
+      "category": "身体部位",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:hair",
+      "spelling": "hair",
+      "meaning": "头发",
+      "category": "身体部位",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:hand",
+      "spelling": "hand",
+      "meaning": "手",
+      "category": "身体部位",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:arm",
+      "spelling": "arm",
+      "meaning": "手臂",
+      "category": "身体部位",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:leg",
+      "spelling": "leg",
+      "meaning": "腿",
+      "category": "身体部位",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:foot",
+      "spelling": "foot",
+      "meaning": "脚、走",
+      "category": "身体部位",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:apple",
+      "spelling": "apple",
+      "meaning": "苹果",
+      "category": "常见食物与饮品",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:banana",
+      "spelling": "banana",
+      "meaning": "香蕉",
+      "category": "常见食物与饮品",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:grape",
+      "spelling": "grape",
+      "meaning": "葡萄",
+      "category": "常见食物与饮品",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:lemon",
+      "spelling": "lemon",
+      "meaning": "柠檬",
+      "category": "常见食物与饮品",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:fruit",
+      "spelling": "fruit",
+      "meaning": "水果",
+      "category": "常见食物与饮品",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:vegetable",
+      "spelling": "vegetable",
+      "meaning": "蔬菜",
+      "category": "常见食物与饮品",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:potato",
+      "spelling": "potato",
+      "meaning": "马铃薯",
+      "category": "常见食物与饮品",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:tomato",
+      "spelling": "tomato",
+      "meaning": "西红柿",
+      "category": "常见食物与饮品",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:rice",
+      "spelling": "rice",
+      "meaning": "稻、大米",
+      "category": "常见食物与饮品",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:bread",
+      "spelling": "bread",
+      "meaning": "面包",
+      "category": "常见食物与饮品",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:noodle",
+      "spelling": "noodle",
+      "meaning": "面条",
+      "category": "常见食物与饮品",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:egg",
+      "spelling": "egg",
+      "meaning": "蛋、卵",
+      "category": "常见食物与饮品",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:meat",
+      "spelling": "meat",
+      "meaning": "肉类",
+      "category": "常见食物与饮品",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:beef",
+      "spelling": "beef",
+      "meaning": "牛肉",
+      "category": "常见食物与饮品",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:pork",
+      "spelling": "pork",
+      "meaning": "猪肉",
+      "category": "常见食物与饮品",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:fish",
+      "spelling": "fish",
+      "meaning": "鱼",
+      "category": "常见食物与饮品",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:milk",
+      "spelling": "milk",
+      "meaning": "牛奶",
+      "category": "常见食物与饮品",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:water",
+      "spelling": "water",
+      "meaning": "水",
+      "category": "常见食物与饮品",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:tea",
+      "spelling": "tea",
+      "meaning": "茶",
+      "category": "常见食物与饮品",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:coffee",
+      "spelling": "coffee",
+      "meaning": "咖啡",
+      "category": "常见食物与饮品",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:cat",
+      "spelling": "cat",
+      "meaning": "猫",
+      "category": "动物与自然",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:dog",
+      "spelling": "dog",
+      "meaning": "狗",
+      "category": "动物与自然",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:bird",
+      "spelling": "bird",
+      "meaning": "鸟",
+      "category": "动物与自然",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:cow",
+      "spelling": "cow",
+      "meaning": "母牛",
+      "category": "动物与自然",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:pig",
+      "spelling": "pig",
+      "meaning": "猪",
+      "category": "动物与自然",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:horse",
+      "spelling": "horse",
+      "meaning": "马",
+      "category": "动物与自然",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:sheep",
+      "spelling": "sheep",
+      "meaning": "羊",
+      "category": "动物与自然",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:rabbit",
+      "spelling": "rabbit",
+      "meaning": "兔子",
+      "category": "动物与自然",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:tiger",
+      "spelling": "tiger",
+      "meaning": "老虎",
+      "category": "动物与自然",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:lion",
+      "spelling": "lion",
+      "meaning": "狮子",
+      "category": "动物与自然",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:elephant",
+      "spelling": "elephant",
+      "meaning": "大象",
+      "category": "动物与自然",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:monkey",
+      "spelling": "monkey",
+      "meaning": "猴子",
+      "category": "动物与自然",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:panda",
+      "spelling": "panda",
+      "meaning": "熊猫",
+      "category": "动物与自然",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:tree",
+      "spelling": "tree",
+      "meaning": "树、爬上树",
+      "category": "动物与自然",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:flower",
+      "spelling": "flower",
+      "meaning": "花朵",
+      "category": "动物与自然",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:grass",
+      "spelling": "grass",
+      "meaning": "草",
+      "category": "动物与自然",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:sun",
+      "spelling": "sun",
+      "meaning": "太阳",
+      "category": "动物与自然",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:moon",
+      "spelling": "moon",
+      "meaning": "月球、月亮",
+      "category": "动物与自然",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:sky",
+      "spelling": "sky",
+      "meaning": "天空",
+      "category": "动物与自然",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:snow",
+      "spelling": "snow",
+      "meaning": "雪",
+      "category": "动物与自然",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:school",
+      "spelling": "school",
+      "meaning": "学校",
+      "category": "学校与日常物品",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:classroom",
+      "spelling": "classroom",
+      "meaning": "教室",
+      "category": "学校与日常物品",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:lesson",
+      "spelling": "lesson",
+      "meaning": "课、教训",
+      "category": "学校与日常物品",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:homework",
+      "spelling": "homework",
+      "meaning": "作业",
+      "category": "学校与日常物品",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:pen",
+      "spelling": "pen",
+      "meaning": "钢笔",
+      "category": "学校与日常物品",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:pencil",
+      "spelling": "pencil",
+      "meaning": "铅笔",
+      "category": "学校与日常物品",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:desk",
+      "spelling": "desk",
+      "meaning": "桌子",
+      "category": "学校与日常物品",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:bus",
+      "spelling": "bus",
+      "meaning": "公车",
+      "category": "学校与日常物品",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:bed",
+      "spelling": "bed",
+      "meaning": "床",
+      "category": "学校与日常物品",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:door",
+      "spelling": "door",
+      "meaning": "门",
+      "category": "学校与日常物品",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:window",
+      "spelling": "window",
+      "meaning": "窗户",
+      "category": "学校与日常物品",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:bag",
+      "spelling": "bag",
+      "meaning": "包、袋",
+      "category": "学校与日常物品",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:box",
+      "spelling": "box",
+      "meaning": "盒子",
+      "category": "学校与日常物品",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:cup",
+      "spelling": "cup",
+      "meaning": "杯子",
+      "category": "学校与日常物品",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:bottle",
+      "spelling": "bottle",
+      "meaning": "瓶子",
+      "category": "学校与日常物品",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:soap",
+      "spelling": "soap",
+      "meaning": "肥皂",
+      "category": "学校与日常物品",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:towel",
+      "spelling": "towel",
+      "meaning": "毛巾",
+      "category": "学校与日常物品",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:computer",
+      "spelling": "computer",
+      "meaning": "电脑",
+      "category": "学校与日常物品",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:telephone",
+      "spelling": "telephone",
+      "meaning": "电话、打电话",
+      "category": "学校与日常物品",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:car",
+      "spelling": "car",
+      "meaning": "车",
+      "category": "学校与日常物品",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:good",
+      "spelling": "good",
+      "meaning": "好的、货物",
+      "category": "基础形容词与颜色",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:bad",
+      "spelling": "bad",
+      "meaning": "坏的",
+      "category": "基础形容词与颜色",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:big",
+      "spelling": "big",
+      "meaning": "大",
+      "category": "基础形容词与颜色",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:small",
+      "spelling": "small",
+      "meaning": "小的",
+      "category": "基础形容词与颜色",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:long",
+      "spelling": "long",
+      "meaning": "长",
+      "category": "基础形容词与颜色",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:short",
+      "spelling": "short",
+      "meaning": "短",
+      "category": "基础形容词与颜色",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:tall",
+      "spelling": "tall",
+      "meaning": "高",
+      "category": "基础形容词与颜色",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:old",
+      "spelling": "old",
+      "meaning": "老的",
+      "category": "基础形容词与颜色",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:young",
+      "spelling": "young",
+      "meaning": "年轻的",
+      "category": "基础形容词与颜色",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:new",
+      "spelling": "new",
+      "meaning": "新的",
+      "category": "基础形容词与颜色",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:hot",
+      "spelling": "hot",
+      "meaning": "热的",
+      "category": "基础形容词与颜色",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:cold",
+      "spelling": "cold",
+      "meaning": "冷的",
+      "category": "基础形容词与颜色",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:warm",
+      "spelling": "warm",
+      "meaning": "温暖",
+      "category": "基础形容词与颜色",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:happy",
+      "spelling": "happy",
+      "meaning": "快乐的",
+      "category": "基础形容词与颜色",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:sad",
+      "spelling": "sad",
+      "meaning": "悲伤的",
+      "category": "基础形容词与颜色",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:white",
+      "spelling": "white",
+      "meaning": "白色的",
+      "category": "基础形容词与颜色",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:black",
+      "spelling": "black",
+      "meaning": "黑色的",
+      "category": "基础形容词与颜色",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:red",
+      "spelling": "red",
+      "meaning": "红色的",
+      "category": "基础形容词与颜色",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:blue",
+      "spelling": "blue",
+      "meaning": "蓝色的",
+      "category": "基础形容词与颜色",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:yellow",
+      "spelling": "yellow",
+      "meaning": "黄色",
+      "category": "基础形容词与颜色",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:eat",
+      "spelling": "eat",
+      "meaning": "吃",
+      "category": "基础日常动作",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:drink",
+      "spelling": "drink",
+      "meaning": "喝",
+      "category": "基础日常动作",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:sleep",
+      "spelling": "sleep",
+      "meaning": "睡眠",
+      "category": "基础日常动作",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:walk",
+      "spelling": "walk",
+      "meaning": "走路",
+      "category": "基础日常动作",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:run",
+      "spelling": "run",
+      "meaning": "跑步、运转",
+      "category": "基础日常动作",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:sit",
+      "spelling": "sit",
+      "meaning": "坐在",
+      "category": "基础日常动作",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:see",
+      "spelling": "see",
+      "meaning": "看",
+      "category": "基础日常动作",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:hear",
+      "spelling": "hear",
+      "meaning": "听到",
+      "category": "基础日常动作",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:listen",
+      "spelling": "listen",
+      "meaning": "听",
+      "category": "基础日常动作",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:speak",
+      "spelling": "speak",
+      "meaning": "说",
+      "category": "基础日常动作",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:talk",
+      "spelling": "talk",
+      "meaning": "说",
+      "category": "基础日常动作",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:ask",
+      "spelling": "ask",
+      "meaning": "问",
+      "category": "基础日常动作",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:know",
+      "spelling": "know",
+      "meaning": "知道",
+      "category": "基础日常动作",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:love",
+      "spelling": "love",
+      "meaning": "爱",
+      "category": "基础日常动作",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:buy",
+      "spelling": "buy",
+      "meaning": "购买",
+      "category": "基础日常动作",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:sell",
+      "spelling": "sell",
+      "meaning": "卖",
+      "category": "基础日常动作",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:wash",
+      "spelling": "wash",
+      "meaning": "洗",
+      "category": "基础日常动作",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:cook",
+      "spelling": "cook",
+      "meaning": "烹饪",
+      "category": "基础日常动作",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:sing",
+      "spelling": "sing",
+      "meaning": "唱歌",
+      "category": "基础日常动作",
+      "decision": "pending"
+    },
+    {
+      "id": "netem:swim",
+      "spelling": "swim",
+      "meaning": "游泳",
+      "category": "基础日常动作",
+      "decision": "pending"
+    }
+  ]
+}
