@@ -1,13 +1,27 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import type { VocabularyBundle } from './domain/types.ts'
 import ScreeningSession from './components/ScreeningSession.vue'
 import ReviewPanel from './components/ReviewPanel.vue'
 import PrintSheet from './components/PrintSheet.vue'
+import HomeDashboard from './components/HomeDashboard.vue'
 
-const view = ref(location.hash === '#print' ? 'print' : location.hash === '#review' ? 'review' : location.hash === '#screening' ? 'screening' : 'vocabulary')
-function syncView() { view.value = location.hash === '#print' ? 'print' : location.hash === '#review' ? 'review' : location.hash === '#screening' ? 'screening' : 'vocabulary' }
-onMounted(() => window.addEventListener('hashchange', syncView))
+function resolveView(hash: string) {
+  if (hash === '#print') return 'print'
+  if (hash === '#review' || hash === '#review-tools') return 'review'
+  if (hash === '#screening' || hash === '#screening-tools') return 'screening'
+  if (hash === '#vocabulary') return 'vocabulary'
+  return 'home'
+}
+const view = ref(resolveView(location.hash))
+async function scrollToAnchor() {
+  const id = location.hash.slice(1)
+  if (!['review-tools', 'screening-tools'].includes(id)) return
+  await nextTick()
+  requestAnimationFrame(() => document.getElementById(id)?.scrollIntoView({ block: 'start' }))
+}
+function syncView() { view.value = resolveView(location.hash); void scrollToAnchor() }
+onMounted(() => { window.addEventListener('hashchange', syncView); void scrollToAnchor() })
 onUnmounted(() => window.removeEventListener('hashchange', syncView))
 
 const bundle = ref<VocabularyBundle | null>(null)
@@ -96,23 +110,29 @@ onMounted(loadVocabulary)
       <a class="brand" href="#" aria-label="拾词首页"><span class="brand-icon">拾</span><span>拾词<small>考研词汇筛查器</small></span></a>
       <div class="nav-caption">我的学习空间</div>
       <nav aria-label="主要导航">
-        <a class="nav-item" :class="{ active: view === 'vocabulary' }" href="#vocabulary" :aria-current="view === 'vocabulary' ? 'page' : undefined"><span aria-hidden="true">▤</span> 我的词库</a>
+        <a class="nav-item" :class="{ active: view === 'home' }" href="#" :aria-current="view === 'home' ? 'page' : undefined"><span aria-hidden="true">⌂</span> 首页</a>
         <a class="nav-item" :class="{ active: view === 'screening' }" href="#screening" :aria-current="view === 'screening' ? 'page' : undefined"><span aria-hidden="true">◎</span> 单词筛查 <small>完整版</small></a>
         <a class="nav-item" :class="{ active: view === 'review' }" href="#review" :aria-current="view === 'review' ? 'page' : undefined"><span aria-hidden="true">▧</span> 错词与复筛</a>
+        <a class="nav-item" :class="{ active: view === 'vocabulary' }" href="#vocabulary" :aria-current="view === 'vocabulary' ? 'page' : undefined"><span aria-hidden="true">▤</span> 完整词库</a>
       </nav>
       <div class="sidebar-note"><span class="local-dot"></span> 个人本地版<p>一步一步，找到需要背的词。</p></div>
     </aside>
 
     <main>
       <header class="topbar">
-        <span>我的学习空间 <span class="crumb">/</span> <strong>{{ view === 'print' ? '错词背诵表' : view === 'review' ? '错词与复筛' : view === 'screening' ? '单词筛查' : '词库总览' }}</strong></span>
+        <span>我的学习空间 <span class="crumb">/</span> <strong>{{ view === 'print' ? '错词背诵表' : view === 'review' ? '错词与复筛' : view === 'screening' ? '单词筛查' : view === 'vocabulary' ? '完整词库' : '首页' }}</strong></span>
         <div class="zoom-controls" role="group" aria-label="界面缩放">
           <button type="button" :disabled="zoomPercent === MIN_ZOOM" aria-label="缩小界面" title="缩小（Ctrl+-）" @click="setZoom(zoomPercent - ZOOM_STEP)">−</button>
           <button type="button" class="zoom-value" :aria-label="`恢复默认缩放，当前 ${zoomPercent}%`" title="恢复 100%（Ctrl+0）" @click="setZoom(100)">{{ zoomPercent }}%</button>
           <button type="button" :disabled="zoomPercent === MAX_ZOOM" aria-label="放大界面" title="放大（Ctrl++）" @click="setZoom(zoomPercent + ZOOM_STEP)">＋</button>
         </div>
       </header>
-      <nav class="mobile-nav" aria-label="移动端导航"><a href="#vocabulary" :aria-current="view === 'vocabulary' ? 'page' : undefined">我的词库</a><a href="#screening" :aria-current="view === 'screening' ? 'page' : undefined">单词筛查</a><a href="#review" :aria-current="view === 'review' ? 'page' : undefined">错词与复筛</a></nav>
+      <nav v-if="view !== 'print'" class="mobile-nav" aria-label="移动端导航">
+        <a href="#" :aria-current="view === 'home' ? 'page' : undefined"><span aria-hidden="true">⌂</span><small>首页</small></a>
+        <a href="#screening" :aria-current="view === 'screening' ? 'page' : undefined"><span aria-hidden="true">◎</span><small>筛查</small></a>
+        <a href="#review" :aria-current="view === 'review' ? 'page' : undefined"><span aria-hidden="true">▧</span><small>错词</small></a>
+        <a href="#review-tools"><span aria-hidden="true">⇅</span><small>备份</small></a>
+      </nav>
       <div class="content">
         <section v-if="view === 'vocabulary'" class="intro">
           <div class="eyebrow">YOUR WORDS, YOUR PACE</div>
@@ -124,6 +144,7 @@ onMounted(loadVocabulary)
         <div v-else-if="error" class="message-card error" role="alert"><p>{{ error }}</p><button class="primary" @click="loadVocabulary">重新加载</button></div>
 
         <template v-else-if="bundle">
+          <HomeDashboard v-show="view === 'home'" :words="bundle.words" :dictionary-version="bundle.contentVersion" :active="view === 'home'" />
           <ScreeningSession v-show="view === 'screening'" :words="bundle.words" :dictionary-version="bundle.contentVersion" :active="view === 'screening'" />
           <ReviewPanel v-show="view === 'review'" :words="bundle.words" :dictionary-version="bundle.contentVersion" :active="view === 'review'" />
           <PrintSheet v-if="view === 'print'" :words="bundle.words" :dictionary-version="bundle.contentVersion" />

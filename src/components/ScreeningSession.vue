@@ -95,7 +95,7 @@ watch(question, async () => {
       <div v-if="phase === 'loading'" class="message-card" role="status">正在恢复学习进度…</div>
       <div v-if="storageError" class="message-card error" role="alert"><p>{{ storageError }}</p><p v-if="pending">尚未保存的选择：{{ pending.spelling }} → {{ pending.selectedMeaning }}</p><button v-if="!conflict" class="secondary" @click="pending ? savePending() : restore()">{{ pending ? '重试保存' : '重新读取存档' }}</button></div>
       <div class="screening-progress"><span>已筛选 <strong>{{ isReview ? initialCount : records.length }}</strong>{{ isReview ? '' : ` / ${questions.length}` }} 词</span><progress v-if="!isReview" :value="records.length" :max="questions.length || 1" aria-label="已筛选词汇进度"></progress><button v-if="isReview" class="secondary" :disabled="!!pending || phase === 'loading'" @click="emit('back')">返回错词列表</button></div>
-      <div v-if="!isReview" class="screening-actions" aria-label="筛查记录操作">
+      <div v-if="!isReview" id="screening-tools" class="screening-actions" aria-label="筛查记录操作">
         <button class="secondary" :disabled="actionDisabled || !records.length" @click="backupScreening">{{ actionBusy ? '正在处理…' : '备份当前筛查' }}</button>
         <button class="secondary danger-action" :disabled="actionDisabled || !records.length" @click="resetScreening">重置筛查</button>
         <span>备份后可以继续筛选，也可以重置并重新开始。</span>

@@ -25,6 +25,38 @@ async function answer(page: Page, index: number, correct = true) {
   await expect(page.locator('.answer-feedback:visible strong')).toHaveCount(0, { timeout: 5000 })
 }
 
+test('iPhone 首页显示进度、四个入口和安全区底部导航', async ({ page }, testInfo) => {
+  await useTestVocabulary(page)
+  const errors: string[] = []
+  page.on('pageerror', error => errors.push(error.message))
+
+  for (const width of [375, 390, 430]) {
+    await page.setViewportSize({ width, height: 844 })
+    await page.goto('/')
+    await expect(page.getByRole('heading', { name: '从这里继续筛查。' })).toBeVisible()
+    await expect(page.locator('.home-actions a')).toHaveCount(4)
+    await expect(page.locator('.home-progress-card strong')).toContainText('0 / 48 词')
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+  }
+
+  await page.locator('.home-action-primary').click()
+  await expect(page).toHaveURL(/#screening$/)
+  await expect(card(page)).toBeVisible()
+  await answer(page, 0, false)
+
+  await page.getByRole('navigation', { name: '移动端导航' }).getByRole('link', { name: /首页/ }).click()
+  await expect(page.locator('.home-progress-card strong')).toContainText('1 / 48 词')
+  await expect(page.getByRole('link', { name: /错词复筛/ })).toContainText('历史错词 1 个')
+
+  await page.getByRole('link', { name: /备份与恢复/ }).click()
+  await expect(page).toHaveURL(/#review-tools$/)
+  await expect(page.locator('#review-tools')).toBeVisible()
+  await page.goto('/')
+  await page.screenshot({ path: testInfo.outputPath('mobile-home.png'), fullPage: true })
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+  expect(errors).toEqual([])
+})
+
 test('完整初筛、复筛、CSV、打印、备份恢复及窄屏布局', async ({ page }, testInfo) => {
   await useTestVocabulary(page)
   const errors: string[] = []

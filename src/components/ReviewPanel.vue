@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, shallowRef, watch } from 'vue'
+import { computed, nextTick, ref, shallowRef, watch } from 'vue'
 import type { VocabularyWord } from '../domain/types.ts'
 import { buildSampleQuestions, type ScreeningQuestion } from '../domain/questions.ts'
 import { createIndexedDBStorage, validateSnapshot, type ScreeningSnapshot, type ScreeningStorage, type RevisionStorage } from '../domain/screeningStorage.ts'
@@ -34,7 +34,13 @@ async function load() {
     disk = createReviewStorage()
     history.value = initial.value ? validateReviewHistory(await disk.load(), initial.value, questions.value) : null
   } catch (cause) { error.value = cause instanceof Error ? cause.message : '无法读取错词存档，请重试。' }
-  finally { loading.value = false }
+  finally {
+    loading.value = false
+    if (location.hash === '#review-tools') {
+      await nextTick()
+      document.getElementById('review-tools')?.scrollIntoView({ block: 'start' })
+    }
+  }
 }
 watch(() => props.active, active => { if (active) void load() }, { immediate: true })
 async function start() {
@@ -104,7 +110,7 @@ async function restore(event: Event) {
       <div class="review-filters" role="group" aria-label="错词列表范围"><button class="secondary" :aria-pressed="filter === 'pending'" @click="filter = 'pending'">待复筛（{{ pendingWords.length }}）</button><button class="secondary" :aria-pressed="filter === 'history'" @click="filter = 'history'">历史错词（{{ words.length }}）</button></div>
       <div v-if="shownWords.length" class="table-wrap"><table><thead><tr><th scope="col">英文单词</th><th scope="col">核心词义</th><th scope="col">状态</th></tr></thead><tbody><tr v-for="word in shownWords" :key="word.wordId"><td class="spelling">{{ word.spelling }}</td><td class="meaning">{{ word.coreMeaning }}</td><td class="meaning">{{ word.needsReview ? '待复筛' : '复筛已答对' }}</td></tr></tbody></table></div>
       <div v-else class="message-card"><h2>{{ filter === 'history' ? '暂无历史错词' : '暂无待复筛的词' }}</h2><p class="preview-note">{{ words.length ? '之前的错词已在复筛中答对，可以在历史错词中查看。' : initialComplete ? '已开放的初筛题全部答对。' : '初筛中答错的词会自动出现在这里。' }}</p></div>
-      <section class="study-tools" aria-label="导出、打印和备份">
+      <section id="review-tools" class="study-tools" aria-label="导出、打印和备份">
         <h2>导出、打印与备份</h2><p>导出和打印均使用历史错词；复筛答对的词也会保留，方便重复背诵。</p>
         <div class="tool-actions"><button class="secondary" :disabled="!words.length" @click="exportCsv">导出 Excel CSV</button><a class="secondary" :class="{ disabled: !words.length }" href="#print" :aria-disabled="!words.length">打印背诵表</a><button class="secondary" @click="backup">备份学习记录</button><button class="secondary" @click="restoreInput?.click()">恢复备份</button><input ref="restoreInput" class="sr-only" type="file" accept="application/json,.json" aria-label="选择学习记录备份文件" @change="restore" /></div>
         <p v-if="toolMessage" class="tool-message" role="status">{{ toolMessage }}</p>
