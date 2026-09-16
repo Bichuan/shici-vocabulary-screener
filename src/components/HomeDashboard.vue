@@ -30,6 +30,11 @@ async function loadSummary() {
   }
 }
 
+function revealInstallGuide(event: Event) {
+  const guide = event.currentTarget as HTMLDetailsElement
+  if (guide.open) requestAnimationFrame(() => guide.scrollIntoView({ block: 'start', behavior: 'smooth' }))
+}
+
 watch(() => props.active, active => { if (active) void loadSummary() }, { immediate: true })
 </script>
 
@@ -79,5 +84,17 @@ watch(() => props.active, active => { if (active) void loadSummary() }, { immedi
     </nav>
 
     <a class="home-vocabulary-link" href="#vocabulary">查看完整词库与数据来源 <span aria-hidden="true">→</span></a>
+    <details class="install-guide" @toggle="revealInstallGuide">
+      <summary><span>添加到 iPhone 主屏幕</span><small>查看安装步骤</small></summary>
+      <div>
+        <ol>
+          <li>用 iPhone 的 <strong>Safari</strong> 打开拾词的网址。</li>
+          <li>点击 Safari 底部的<strong>分享按钮</strong>（方框向上箭头）。</li>
+          <li>在分享菜单中选择<strong>添加到主屏幕</strong>。</li>
+          <li>确认名称为“拾词”，点击右上角的<strong>添加</strong>。</li>
+        </ol>
+        <p>以后直接点击主屏幕上的“拾词”即可独立打开。应用按竖屏优先设计。</p>
+      </div>
+    </details>
   </section>
 </template>

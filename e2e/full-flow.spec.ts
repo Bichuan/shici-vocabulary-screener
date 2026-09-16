@@ -25,6 +25,64 @@ async function answer(page: Page, index: number, correct = true) {
   await expect(page.locator('.answer-feedback:visible strong')).toHaveCount(0, { timeout: 5000 })
 }
 
+test('PWA 外壳声明独立启动、竖屏策略、图标和安装说明', async ({ page, request }, testInfo) => {
+  const response = await request.get('/manifest.webmanifest')
+  expect(response.ok()).toBe(true)
+  const manifest = await response.json()
+  expect(manifest).toMatchObject({
+    id: './',
+    name: '拾词 · 考研英语词汇筛查器',
+    short_name: '拾词',
+    start_url: './',
+    scope: './',
+    display: 'standalone',
+    orientation: 'portrait-primary',
+    background_color: '#f6f7f2',
+    theme_color: '#285b46',
+  })
+  expect(manifest.icons).toEqual(expect.arrayContaining([
+    expect.objectContaining({ src: 'icons/pwa-192.png', sizes: '192x192', purpose: 'any' }),
+    expect.objectContaining({ src: 'icons/pwa-512.png', sizes: '512x512', purpose: 'any' }),
+    expect.objectContaining({ src: 'icons/pwa-maskable-512.png', sizes: '512x512', purpose: 'maskable' }),
+  ]))
+
+  await useTestVocabulary(page)
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto('/')
+  await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#285b46')
+  await expect(page.locator('meta[name="apple-mobile-web-app-capable"]')).toHaveAttribute('content', 'yes')
+  await expect(page.locator('meta[name="apple-mobile-web-app-title"]')).toHaveAttribute('content', '拾词')
+  await expect(page.locator('link[rel="manifest"]')).toHaveAttribute('href', /manifest\.webmanifest$/)
+  await expect(page.locator('link[rel="apple-touch-icon"]')).toHaveAttribute('sizes', '180x180')
+
+  const iconSizes = await page.evaluate(async () => {
+    const load = (path: string) => new Promise<[number, number]>((resolve, reject) => {
+      const image = new Image()
+      image.onload = () => resolve([image.naturalWidth, image.naturalHeight])
+      image.onerror = () => reject(new Error('图标无法加载'))
+      image.src = path
+    })
+    return {
+      apple: await load('./icons/apple-touch-icon.png'),
+      regular: await load('./icons/pwa-192.png'),
+      maskable: await load('./icons/pwa-maskable-512.png'),
+    }
+  })
+  expect(iconSizes).toEqual({ apple: [180, 180], regular: [192, 192], maskable: [512, 512] })
+
+  const guide = page.locator('.install-guide')
+  await expect(guide).toBeVisible()
+  await guide.locator('summary').click()
+  await expect(guide.locator('li')).toHaveCount(4)
+  await expect(guide).toContainText('Safari')
+  await expect(guide).toContainText('分享按钮')
+  await expect(guide).toContainText('添加到主屏幕')
+  await expect(guide).toContainText('竖屏优先')
+  await page.waitForTimeout(500)
+  await page.screenshot({ path: testInfo.outputPath('pwa-install-guide.png') })
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+})
+
 test('iPhone 首页显示进度、四个入口和安全区底部导航', async ({ page }, testInfo) => {
   await useTestVocabulary(page)
   const errors: string[] = []
