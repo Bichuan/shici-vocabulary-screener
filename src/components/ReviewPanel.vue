@@ -4,7 +4,8 @@ import type { VocabularyWord } from '../domain/types.ts'
 import { buildSampleQuestions, type ScreeningQuestion } from '../domain/questions.ts'
 import { createIndexedDBStorage, loadValidatedSnapshot, type ScreeningSnapshot, type ScreeningStorage, type RevisionStorage } from '../domain/screeningStorage.ts'
 import { activeRound, beginReview, createReviewStorage, loadValidatedReviewHistory, reviewSessionStorage, reviewWords, roundQuestions, type ReviewHistory } from '../domain/review.ts'
-import { backupFileName, createMemorizationCsv, csvFileName, historicalWrongWords, readLearningBackup, restoreLearningBackup, validateLearningBackup } from '../domain/studyTools.ts'
+import { backupFileName, createMemorizationCsv, csvFileName, historicalWrongWords, readLearningBackup, restoreLearningBackup, validateLearningBackup, type LearningBackup } from '../domain/studyTools.ts'
+import { shareOrDownloadFile, type FileTransferResult } from '../domain/fileTransfer.ts'
 import ScreeningSession from './ScreeningSession.vue'
 
 const props = defineProps<{ words: VocabularyWord[]; dictionaryVersion: string; active: boolean }>()
@@ -17,7 +18,17 @@ const busy = ref(false)
 const error = ref('')
 const filter = ref<'pending' | 'history'>('pending')
 const toolMessage = ref('')
+const toolBusy = ref(false)
 const restoreInput = ref<HTMLInputElement | null>(null)
+const MAX_BACKUP_FILE_SIZE = 10_000_000
+interface RestorePreview {
+  fileName: string
+  backup: LearningBackup
+  expected: LearningBackup
+  answeredCount: number
+  wrongCount: number
+}
+const restorePreview = shallowRef<RestorePreview | null>(null)
 let disk: RevisionStorage<ReviewHistory>
 const words = computed(() => initial.value && history.value ? reviewWords(initial.value, history.value) : [])
 const pendingWords = computed(() => words.value.filter(w => w.needsReview))
@@ -58,42 +69,76 @@ async function start() {
   finally { busy.value = false }
 }
 async function back() { session.value = null; await load() }
-function download(content: string, filename: string, type: string) {
-  const url = URL.createObjectURL(new Blob([content], { type }))
-  const link = document.createElement('a')
-  link.href = url; link.download = filename; document.body.append(link); link.click(); link.remove()
-  window.setTimeout(() => URL.revokeObjectURL(url), 0)
+function transferMessage(result: FileTransferResult, noun: string) {
+  if (result === 'shared') return noun + '已通过系统分享处理，可保存到“文件”或 iCloud Drive。'
+  if (result === 'downloaded') return noun + '已下载。'
+  return '已取消系统分享，现有学习记录没有改变。'
 }
 async function exportCsv() {
+  if (toolBusy.value) return
+  const list = words.value.map(word => ({ spelling: word.spelling, coreMeaning: word.coreMeaning }))
+  if (!list.length) { toolMessage.value = '暂无历史错词可导出。'; return }
+  toolBusy.value = true; toolMessage.value = ''
   try {
-    const backup = validateLearningBackup(await readLearningBackup(undefined, props.dictionaryVersion), props.dictionaryVersion, questions.value)
-    const list = historicalWrongWords(backup)
-    if (!list.length) { toolMessage.value = '暂无历史错词可导出。'; return }
-    download(createMemorizationCsv(list), csvFileName(), 'text/csv;charset=utf-8')
-    toolMessage.value = `已导出 ${list.length} 个历史错词。`
+    const result = await shareOrDownloadFile(createMemorizationCsv(list), csvFileName(), 'text/csv;charset=utf-8', '拾词错词背诵表')
+    toolMessage.value = transferMessage(result, list.length + ' 个历史错词')
   } catch (cause) { toolMessage.value = cause instanceof Error ? cause.message : '导出失败，请重试。' }
+  finally { toolBusy.value = false }
 }
 async function backup() {
+  if (toolBusy.value) return
+  toolBusy.value = true; toolMessage.value = ''
   try {
-    const archive = await readLearningBackup(undefined, props.dictionaryVersion)
-    const checked = validateLearningBackup(archive, props.dictionaryVersion, questions.value)
-    download(JSON.stringify(checked, null, 2), backupFileName(), 'application/json')
-    toolMessage.value = '学习记录备份已下载。'
+    const archive = validateLearningBackup({
+      schemaVersion: 1,
+      createdAt: new Date().toISOString(),
+      dictionaryVersion: props.dictionaryVersion,
+      initial: initial.value ? JSON.parse(JSON.stringify(initial.value)) : null,
+      review: history.value?.revision ? JSON.parse(JSON.stringify(history.value)) : null,
+    }, props.dictionaryVersion, questions.value)
+    const result = await shareOrDownloadFile(JSON.stringify(archive, null, 2), backupFileName(), 'application/json;charset=utf-8', '拾词完整学习备份')
+    toolMessage.value = transferMessage(result, '完整学习备份')
   } catch (cause) { toolMessage.value = cause instanceof Error ? cause.message : '备份失败，请重试。' }
+  finally { toolBusy.value = false }
 }
-async function restore(event: Event) {
+async function selectRestore(event: Event) {
   const input = event.currentTarget as HTMLInputElement
   const file = input.files?.[0]
+  restorePreview.value = null
+  toolMessage.value = ''
   if (!file) return
-  if (file.size > 1_000_000) { toolMessage.value = '备份文件过大，未恢复。'; input.value = ''; return }
+  if (file.size > MAX_BACKUP_FILE_SIZE) { toolMessage.value = '备份文件超过 10 MB，未恢复。'; input.value = ''; return }
   try {
     const checked = validateLearningBackup(JSON.parse(await file.text()), props.dictionaryVersion, questions.value)
     const expected = await readLearningBackup(undefined, props.dictionaryVersion)
-    if (!window.confirm('恢复备份会覆盖当前浏览器中的学习进度和复筛记录。确定恢复吗？')) return
-    await restoreLearningBackup(checked, undefined, expected)
+    restorePreview.value = {
+      fileName: file.name,
+      backup: checked,
+      expected,
+      answeredCount: checked.initial?.records.length ?? 0,
+      wrongCount: historicalWrongWords(checked).length,
+    }
+    toolMessage.value = '备份文件已通过校验，请核对下方内容后确认恢复。'
+  } catch (cause) {
+    toolMessage.value = cause instanceof Error ? cause.message : '备份文件无法恢复。'
+  } finally { input.value = '' }
+}
+async function confirmRestore() {
+  const preview = restorePreview.value
+  if (!preview || toolBusy.value) return
+  toolBusy.value = true
+  try {
+    await restoreLearningBackup(preview.backup, undefined, preview.expected)
+    restorePreview.value = null
     window.location.reload()
-  } catch (cause) { toolMessage.value = cause instanceof Error ? cause.message : '备份文件无法恢复。' }
-  finally { input.value = '' }
+  } catch (cause) {
+    restorePreview.value = null
+    toolMessage.value = cause instanceof Error ? cause.message : '恢复失败，现有记录未更改。'
+  } finally { toolBusy.value = false }
+}
+function cancelRestore() {
+  restorePreview.value = null
+  toolMessage.value = '已取消恢复，现有学习记录没有改变。'
 }
 </script>
 
@@ -112,9 +157,16 @@ async function restore(event: Event) {
       <div v-else class="message-card"><h2>{{ filter === 'history' ? '暂无历史错词' : '暂无待复筛的词' }}</h2><p class="preview-note">{{ words.length ? '之前的错词已在复筛中答对，可以在历史错词中查看。' : initialComplete ? '已开放的初筛题全部答对。' : '初筛中答错的词会自动出现在这里。' }}</p></div>
       <section id="review-tools" class="study-tools" aria-label="导出、打印和备份">
         <h2>导出、打印与备份</h2><p>导出和打印均使用历史错词；复筛答对的词也会保留，方便重复背诵。</p>
-        <div class="tool-actions"><button class="secondary" :disabled="!words.length" @click="exportCsv">导出 Excel CSV</button><a class="secondary" :class="{ disabled: !words.length }" href="#print" :aria-disabled="!words.length">打印背诵表</a><button class="secondary" @click="backup">备份学习记录</button><button class="secondary" @click="restoreInput?.click()">恢复备份</button><input ref="restoreInput" class="sr-only" type="file" accept="application/json,.json" aria-label="选择学习记录备份文件" @change="restore" /></div>
+        <div class="tool-actions"><button class="secondary" :disabled="toolBusy || !words.length" @click="exportCsv">导出 Excel CSV</button><a class="secondary" :class="{ disabled: !words.length }" href="#print" :aria-disabled="!words.length">打印背诵表</a><button class="secondary" :disabled="toolBusy" @click="backup">备份学习记录</button><button class="secondary" :disabled="toolBusy" @click="restoreInput?.click()">恢复备份</button><input ref="restoreInput" class="sr-only" type="file" accept="application/json,.json" aria-label="选择学习记录备份文件" @change="selectRestore" /></div>
         <p v-if="toolMessage" class="tool-message" role="status">{{ toolMessage }}</p>
-        <p class="tool-note">CSV 可直接用 Excel 打开；恢复备份会覆盖当前浏览器里的进度，恢复前会再次确认。</p>
+        <section v-if="restorePreview" class="restore-confirmation" aria-label="确认恢复备份">
+          <div><span>待恢复文件</span><strong>{{ restorePreview.fileName }}</strong></div>
+          <div class="restore-metrics"><p><span>已筛查</span><strong>{{ restorePreview.answeredCount }}</strong> 词</p><p><span>历史错词</span><strong>{{ restorePreview.wrongCount }}</strong> 词</p></div>
+          <p>词库版本：<code>{{ restorePreview.backup.dictionaryVersion }}</code></p>
+          <p>确认后会覆盖这个应用当前的初筛与复筛记录。</p>
+          <div class="restore-actions"><button class="primary" :disabled="toolBusy" @click="confirmRestore">确认恢复</button><button class="secondary" :disabled="toolBusy" @click="cancelRestore">取消</button></div>
+        </section>
+        <p class="tool-note">iPhone 会优先打开系统分享面板，可保存到“文件”或 iCloud Drive；不支持分享文件时会直接下载。恢复前会校验文件和词库版本。</p>
       </section>
       <p class="preview-footnote">复筛进度自动保存在本机。备份文件请放在自己能找到的位置。</p>
     </template>

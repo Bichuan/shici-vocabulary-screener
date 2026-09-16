@@ -299,12 +299,18 @@ test('完整初筛、复筛、CSV、打印、备份恢复及窄屏布局', async
   await page.emulateMedia({ media: 'screen' })
   await page.getByRole('button', { name: '返回错词列表' }).click()
   // Restore the actual partial download, then restore the completed download.
-  page.once('dialog', dialog => dialog.accept())
   await page.getByLabel('选择学习记录备份文件').setInputFiles(partialPath)
+  const partialPreview = page.getByRole('region', { name: '确认恢复备份' })
+  await expect(partialPreview).toContainText('已筛查1 词')
+  await expect(partialPreview).toContainText('历史错词1 词')
+  await partialPreview.getByRole('button', { name: '确认恢复' }).click()
   await expect(page.locator('.review-overview')).toContainText('已筛选 1 词')
   await expect(page.getByRole('button', { name: '开始错词复筛' })).toBeDisabled()
-  page.once('dialog', dialog => dialog.accept())
   await page.getByLabel('选择学习记录备份文件').setInputFiles(backupPath)
+  const completedPreview = page.getByRole('region', { name: '确认恢复备份' })
+  await expect(completedPreview).toContainText('已筛查48 词')
+  await expect(completedPreview).toContainText('历史错词2 词')
+  await completedPreview.getByRole('button', { name: '确认恢复' }).click()
   await expect(page.locator('.review-overview')).toContainText('已筛选 48 词')
   await expect(page.getByRole('button', { name: '待复筛（0）', exact: true })).toBeVisible()
   await page.setViewportSize({ width: 390, height: 844 })
@@ -325,13 +331,50 @@ test('键盘作答、取消恢复和无效备份均保护现有进度', async ({
   await expect(card(page).getByRole('heading', { name: questions[1]!.spelling, exact: true })).toBeVisible()
   await page.goto('/#review')
   const empty = { schemaVersion: 1, createdAt: new Date().toISOString(), dictionaryVersion: bundle.contentVersion, initial: null, review: null }
-  page.once('dialog', dialog => dialog.dismiss())
   await page.getByLabel('选择学习记录备份文件').setInputFiles({ name: 'empty.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(empty)) })
+  const preview = page.getByRole('region', { name: '确认恢复备份' })
+  await expect(preview).toContainText('已筛查0 词')
+  await expect(preview).toContainText('历史错词0 词')
+  await preview.getByRole('button', { name: '取消' }).click()
   await expect(page.locator('.review-overview')).toContainText('已筛选 1 词')
   await page.getByLabel('选择学习记录备份文件').setInputFiles({ name: 'invalid.json', mimeType: 'application/json', buffer: Buffer.from('{"schemaVersion":999}') })
   await expect(page.locator('.tool-message')).toContainText('备份文件格式不正确')
   await page.reload()
   await expect(page.locator('.review-overview')).toContainText('已筛选 1 词')
+})
+
+test('iPhone 通过系统分享保存完整 JSON 备份和错词 CSV', async ({ page }) => {
+  await page.addInitScript(() => {
+    const state = window as typeof window & { __sharedFiles?: Array<{ name: string; type: string; text: string }> }
+    state.__sharedFiles = []
+    Object.defineProperty(navigator, 'canShare', { configurable: true, value: () => true })
+    Object.defineProperty(navigator, 'share', {
+      configurable: true,
+      value: async (data: ShareData) => {
+        const file = data.files?.[0]
+        if (file) state.__sharedFiles!.push({ name: file.name, type: file.type, text: await file.text() })
+      },
+    })
+  })
+  await useTestVocabulary(page)
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto('/#screening')
+  await answer(page, 0, false)
+  await page.goto('/#review')
+
+  await page.getByRole('button', { name: '导出 Excel CSV' }).click()
+  await expect(page.locator('.tool-message')).toContainText('系统分享')
+  await page.getByRole('button', { name: '备份学习记录' }).click()
+  await expect(page.locator('.tool-message')).toContainText('系统分享')
+
+  const shared = await page.evaluate(() => (window as typeof window & { __sharedFiles: Array<{ name: string; type: string; text: string }> }).__sharedFiles)
+  expect(shared).toHaveLength(2)
+  expect(shared[0]!.name).toMatch(/^拾词-错词背诵-.+\.csv$/)
+  expect(shared[0]!.type).toContain('text/csv')
+  expect(shared[0]!.text).toContain(questions[0]!.spelling)
+  expect(shared[1]!.name).toMatch(/^拾词-学习备份-.+\.json$/)
+  expect(shared[1]!.type).toContain('application/json')
+  expect(JSON.parse(shared[1]!.text).initial.records).toHaveLength(1)
 })
 
 test('iPhone 页面关闭并重新打开后从下一题继续，作答期间不上传学习数据', async ({ page, context }) => {

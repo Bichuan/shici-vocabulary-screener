@@ -3,8 +3,9 @@ import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import type { VocabularyWord } from '../domain/types.ts'
 import { buildSampleQuestions, type ScreeningQuestion } from '../domain/questions.ts'
 import { useScreening } from '../domain/useScreening.ts'
-import type { ScreeningStorage } from '../domain/screeningStorage.ts'
+import { questionSignature, type ScreeningSnapshot, type ScreeningStorage } from '../domain/screeningStorage.ts'
 import { readLearningBackup, restoreLearningBackup, screeningBackupFileName, type LearningBackup } from '../domain/studyTools.ts'
+import { shareOrDownloadFile } from '../domain/fileTransfer.ts'
 
 const props = defineProps<{ words: VocabularyWord[]; dictionaryVersion: string; active: boolean; reviewQuestions?: ScreeningQuestion[]; storage?: ScreeningStorage; initialCount?: number }>()
 const emit = defineEmits<{ back: [] }>()
@@ -28,26 +29,31 @@ const { question, options, phase, records, latest, wrongWords, submit, storageEr
 const feedback = computed(() => phase.value === 'feedback')
 const saveStatus = computed(() => phase.value === 'loading' ? '正在读取存档…' : phase.value === 'saving' ? '正在保存…' : phase.value === 'error' ? '存档需要处理' : records.value.length ? '进度与错词已保存在本机' : '答题后自动保存到本机')
 const actionDisabled = computed(() => actionBusy.value || !!pending.value || ['loading', 'saving'].includes(phase.value))
-function downloadBackup(content: string, fileName: string) {
-  const url = URL.createObjectURL(new Blob([content], { type: 'application/json;charset=utf-8' }))
-  const anchor = document.createElement('a')
-  anchor.href = url
-  anchor.download = fileName
-  document.body.append(anchor)
-  anchor.click()
-  anchor.remove()
-  window.setTimeout(() => URL.revokeObjectURL(url), 0)
-}
 async function backupScreening() {
   if (actionDisabled.value || !records.value.length) return
   actionBusy.value = true
   actionMessage.value = ''
   try {
-    const backup = await readLearningBackup(indexedDB, props.dictionaryVersion)
-    const count = backup.initial?.records.length ?? 0
-    if (!count) throw new Error('当前还没有可备份的筛查记录。')
-    downloadBackup(JSON.stringify(backup, null, 2), screeningBackupFileName(count))
-    actionMessage.value = `已单独备份 ${count} 个已筛词。可以继续筛选，或重置后开始新一轮。`
+    const count = records.value.length
+    const first = records.value[0]!
+    const initial: ScreeningSnapshot = JSON.parse(JSON.stringify({
+      schemaVersion: 1,
+      dictionaryVersion: props.dictionaryVersion,
+      questionSignature: questionSignature(questions.value),
+      taskId: first.taskId,
+      revision: count,
+      records: records.value,
+    }))
+    const backup: LearningBackup = {
+      schemaVersion: 1,
+      createdAt: new Date().toISOString(),
+      dictionaryVersion: props.dictionaryVersion,
+      initial,
+      review: null,
+    }
+    const result = await shareOrDownloadFile(JSON.stringify(backup, null, 2), screeningBackupFileName(count), 'application/json;charset=utf-8', '拾词当前筛查备份')
+    const saved = result === 'shared' ? '已通过系统分享处理' : result === 'downloaded' ? '已下载' : '已取消分享'
+    actionMessage.value = saved + ' ' + count + ' 个已筛词。可以继续筛选，或重置后开始新一轮。'
   } catch (cause) {
     actionMessage.value = cause instanceof Error ? cause.message : '筛查记录备份失败，请重试。'
   } finally {
