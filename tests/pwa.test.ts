@@ -17,8 +17,7 @@ describe('PWA 离线版本', () => {
     ])
     expect(generated.source).toContain('cache.addAll(PRECACHE_URLS)')
     expect(generated.source).toContain("request.mode === 'navigate'")
-    expect(generated.source).toContain('name.startsWith(CACHE_PREFIX)')
-    expect(generated.source).not.toContain('skipWaiting')
+    expect(generated.source).toContain("event.data?.type === 'ACTIVATE_UPDATE'")
     expect(generated.source).not.toContain('clients.claim')
   })
 
@@ -30,10 +29,7 @@ describe('PWA 离线版本', () => {
     expect(changed.cacheName).not.toBe(current.cacheName)
 
     const installStart = current.source.indexOf("self.addEventListener('install'")
-    const activateStart = current.source.indexOf("self.addEventListener('activate'")
-    const deleteStart = current.source.indexOf('caches.delete')
     expect(installStart).toBeGreaterThanOrEqual(0)
-    expect(activateStart).toBeGreaterThan(installStart)
-    expect(deleteStart).toBeGreaterThan(activateStart)
+    expect(current.source).not.toContain('caches.delete')
   })
 })

@@ -3,6 +3,7 @@ import App from './App.vue'
 import './style.css'
 
 createApp(App).mount('#app')
+window.dispatchEvent(new Event('shici-ready'))
 
 async function registerOfflineWorker() {
   if (!import.meta.env.PROD || !('serviceWorker' in navigator) || !['http:', 'https:'].includes(location.protocol)) return

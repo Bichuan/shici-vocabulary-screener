@@ -15,6 +15,62 @@
     <title>拾词 · 考研词汇筛查器</title>
   </head>
   <body>
+    <aside id="startup-tools" style="padding:10px 16px;background:#f6f7f2;color:#285b46;font:14px system-ui;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+      <button id="refresh-app" type="button" style="padding:8px 14px;border:1px solid #b9c9b2;border-radius:8px;background:white;color:#285b46;font:inherit">刷新 / 检查更新</button>
+      <span id="startup-status" role="status">正在打开拾词…</span>
+    </aside>
+    <style>@media(min-width:761px){#startup-tools{margin-left:228px}}@media print{#startup-tools{display:none!important}}</style>
+    <script>
+      // Independent of the application bundle, so failed module loads still offer recovery.
+      (function () {
+        var button = document.getElementById('refresh-app');
+        var status = document.getElementById('startup-status');
+        var mounted = false;
+        var retryOnly = false;
+        window.addEventListener('shici-ready', function () {
+          mounted = true;
+          status.textContent = '';
+        });
+        setTimeout(function () {
+          if (!mounted) status.textContent = '页面未能启动，请联网后点击刷新。筛查记录不会被清除。';
+        }, 12000);
+        button.addEventListener('click', async function () {
+          if (retryOnly) { location.reload(); return; }
+          button.disabled = true;
+          status.textContent = '正在检查更新…';
+          try {
+            if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+              var registration = await navigator.serviceWorker.getRegistration(location.href);
+              if (registration) {
+                await Promise.race([registration.update(), new Promise(function (_, reject) {
+                  setTimeout(function () { reject(new Error('timeout')); }, 8000);
+                })]);
+                var worker = registration.installing || registration.waiting;
+                if (worker) {
+                  await new Promise(function (resolve, reject) {
+                    var timer = setTimeout(function () { reject(new Error('timeout')); }, 15000);
+                    function changed() {
+                      if (worker.state === 'installed') worker.postMessage({ type: 'ACTIVATE_UPDATE' });
+                      if (worker.state === 'activated' || worker.state === 'redundant') {
+                        clearTimeout(timer); worker.removeEventListener('statechange', changed); resolve();
+                      }
+                    }
+                    worker.addEventListener('statechange', changed);
+                    changed();
+                  });
+                }
+              }
+            }
+            location.reload();
+          } catch (_) {
+            status.textContent = '暂时无法完成更新，可以点击重试刷新。已有记录保留。';
+            button.textContent = '重试刷新';
+            button.disabled = false;
+            retryOnly = true;
+          }
+        });
+      })();
+    </script>
     <div id="app"></div>
     <script type="module" src="/src/main.ts"></script>
   </body>

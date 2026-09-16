@@ -11,6 +11,18 @@ const testWords = fullBundle.words.filter(word => testWordIds.has(word.id))
 const bundle: VocabularyBundle = { ...fullBundle, words: testWords, report: { ...fullBundle.report, importedCount: testWords.length } }
 const questions = buildSampleQuestions(bundle.words, () => 0.999999, true)
 const card = (page: Page) => page.locator('.question-card:visible')
+test('主程序加载失败仍可刷新恢复，刷新保留学习进度', async ({ page }) => {
+  await useTestVocabulary(page)
+  await page.goto('/#screening')
+  await answer(page, 0)
+  await page.route('**/assets/*.js', route => route.abort())
+  await page.reload()
+  await expect(page.getByRole('button', { name: '刷新 / 检查更新' })).toBeVisible()
+  await expect(page.locator('#startup-status')).toContainText('页面未能启动', { timeout: 15000 })
+  await page.unroute('**/assets/*.js')
+  await page.getByRole('button', { name: '刷新 / 检查更新' }).click()
+  await expect(page.locator('.screening-progress')).toContainText('已筛选 1 / 48 词')
+})
 async function useTestVocabulary(page: Page) {
   await page.addInitScript(() => { Math.random = () => 0.999999 })
   await page.route('**/data/vocabulary.json', route => route.fulfill({ contentType: 'application/json', body: JSON.stringify(bundle) }))
