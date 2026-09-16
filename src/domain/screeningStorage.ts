@@ -1,5 +1,5 @@
 import type { SubmittedAnswer } from './useScreening.ts'
-import { LEGACY_SAMPLE_VERSION, type ScreeningQuestion } from './questions.ts'
+import { LEGACY_SAMPLE_VERSION, PREVIOUS_QUESTION_VERSIONS, type ScreeningQuestion } from './questions.ts'
 
 export interface ScreeningSnapshot {
   schemaVersion: 1
@@ -33,7 +33,9 @@ export function questionSignature(questions: ScreeningQuestion[]) {
 
 function isPreviousSnapshot(snapshot: ScreeningSnapshot) {
   return typeof snapshot.questionSignature === 'string' &&
-    (snapshot.questionSignature.includes(LEGACY_SAMPLE_VERSION) || snapshot.questionSignature.startsWith('questions-v2:'))
+    (snapshot.questionSignature.includes(LEGACY_SAMPLE_VERSION) || snapshot.questionSignature.startsWith('questions-v2:') ||
+      (snapshot.questionSignature.startsWith('questions-v3:') && snapshot.records.every(record =>
+        PREVIOUS_QUESTION_VERSIONS.includes(record.questionVersion as typeof PREVIOUS_QUESTION_VERSIONS[number]))))
 }
 
 function migratePreviousSnapshot(snapshot: ScreeningSnapshot, dictionaryVersion: string, questions: ScreeningQuestion[]): ScreeningSnapshot | null {
@@ -44,7 +46,7 @@ function migratePreviousSnapshot(snapshot: ScreeningSnapshot, dictionaryVersion:
   const records = snapshot.records.map(record => {
     const question = byWordId.get(record?.wordId)
     if (!question || !record || record.spelling !== question.spelling ||
-      record.dictionaryVersion !== dictionaryVersion || ![LEGACY_SAMPLE_VERSION, question.version].includes(record.questionVersion) ||
+      record.dictionaryVersion !== dictionaryVersion || ![...PREVIOUS_QUESTION_VERSIONS, question.version].includes(record.questionVersion) ||
       !['correct', 'wrong'].includes(record.result) || typeof record.id !== 'string' || !record.id || ids.has(record.id) ||
       wordIds.has(record.wordId) ||
       record.taskId !== snapshot.taskId || typeof record.answeredAt !== 'string' || !Number.isFinite(Date.parse(record.answeredAt)) ||

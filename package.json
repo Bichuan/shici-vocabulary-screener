@@ -11,6 +11,7 @@
     "dev": "vite",
     "import:vocabulary": "node scripts/import-vocabulary.ts",
     "check:questions": "node scripts/check-questions.ts",
+    "audit:semantics": "node scripts/audit-question-semantics.ts",
     "typecheck": "vue-tsc --noEmit",
     "test": "vitest run tests",
     "test:e2e": "npm run build && playwright test",

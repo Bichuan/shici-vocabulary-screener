@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import type { VocabularyBundle } from '../src/domain/types.ts'
-import { buildSampleQuestions, shuffleOptions, validateQuestions } from '../src/domain/questions.ts'
+import { buildSampleQuestions, SEMANTIC_CONFLICT_GROUPS, shuffleOptions, validateQuestions } from '../src/domain/questions.ts'
 
 const bundle = JSON.parse(readFileSync(new URL('../public/data/vocabulary.json', import.meta.url), 'utf8')) as VocabularyBundle
 
@@ -49,6 +49,20 @@ describe('八选一题目边界', () => {
     for (let start = 0; start < original.length; start += 80) {
       expect(new Set(randomized.slice(start, start + 80).map(question => question.wordId)))
         .toEqual(new Set(original.slice(start, start + 80).map(question => question.wordId)))
+    }
+  })
+  it('人工确认的同义或近义词不会互为干扰项', () => {
+    const questions = buildSampleQuestions(bundle.words, () => 0.999999, false)
+    const bySpelling = new Map(questions.map(question => [question.spelling.toLocaleLowerCase('en-US'), question]))
+    for (const group of SEMANTIC_CONFLICT_GROUPS) for (const spelling of group) {
+      const question = bySpelling.get(spelling)
+      if (!question) continue
+      const optionIds = new Set(question.options.map(option => option.id))
+      for (const other of group) {
+        if (other === spelling) continue
+        const otherQuestion = bySpelling.get(other)
+        if (otherQuestion) expect(optionIds).not.toContain(`source:${otherQuestion.wordId}`)
+      }
     }
   })
 })

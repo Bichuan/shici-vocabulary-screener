@@ -65,6 +65,42 @@ describe('IndexedDB 本地存档', () => {
     expect(saved.questionSignature).toMatch(/^questions-v3:48:/)
   })
 
+  it('题目语义规则升级后保留旧版进度，并替换已移除的歧义选项', () => {
+    const questions = buildSampleQuestions(bundle.words, () => 0.999999, false)
+    const quiet = questions.find(question => question.spelling === 'quiet')!
+    const silent = bundle.words.find(word => word.spelling === 'silent')!
+    const taskId = 'semantic-v1-task'
+    const previous: ScreeningSnapshot = {
+      schemaVersion: 1,
+      dictionaryVersion: bundle.contentVersion,
+      questionSignature: `questions-v3:${questions.length}:source-meanings-v1`,
+      taskId,
+      revision: 1,
+      records: [{
+        id: 'semantic-v1-answer',
+        taskId,
+        wordId: quiet.wordId,
+        dictionaryVersion: bundle.contentVersion,
+        questionVersion: 'source-meanings-v1',
+        selectedOptionId: `source:${silent.id}`,
+        result: 'wrong',
+        answeredAt: '2026-09-16T00:00:00.000Z',
+        spelling: quiet.spelling,
+        coreMeaning: quiet.coreMeaning,
+        selectedMeaning: silent.meaning,
+      }],
+    }
+
+    const migrated = validateSnapshot(previous, bundle.contentVersion, questions)!
+    expect(migrated.records[0]).toMatchObject({
+      wordId: quiet.wordId,
+      questionVersion: quiet.version,
+      result: 'wrong',
+      coreMeaning: quiet.coreMeaning,
+    })
+    expect(migrated.records[0]!.selectedOptionId).not.toBe(`source:${silent.id}`)
+    expect(migrated.questionSignature).not.toBe(previous.questionSignature)
+  })
   it('题序随机化后迁移现有全量存档，并按单词标识跳过已答词', async () => {
     const factory = new IDBFactory()
     const disk = createIndexedDBStorage(factory)

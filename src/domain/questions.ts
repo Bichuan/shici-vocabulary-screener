@@ -13,10 +13,40 @@ export interface ScreeningQuestion {
   correctOptionId: string
 }
 
-export const QUESTION_VERSION = 'source-meanings-v1'
+export const QUESTION_VERSION = 'source-meanings-v2'
 export const SAMPLE_VERSION = QUESTION_VERSION
 export const LEGACY_SAMPLE_VERSION = 'day2-core-v1'
+export const PREVIOUS_QUESTION_VERSIONS = ['source-meanings-v1', LEGACY_SAMPLE_VERSION] as const
 export const LEGACY_SAMPLE_ORDER = sampleGroups.flatMap(group => group.entries.map(([spelling]) => spelling))
+
+// Manually reviewed pairs whose source meanings can both reasonably answer the
+// same English word. They remain in the dictionary, but never appear together
+// in one question. See data/review/BIC-22-语义抽查.md.
+export const SEMANTIC_CONFLICT_GROUPS = [
+  ['relate', 'tell'],
+  ['quiet', 'silent'],
+  ['zone', 'area'],
+  ['drawback', 'handicap'],
+  ['juvenile', 'kid'],
+  ['quantify', 'measure'],
+  ['decree', 'statute'],
+] as const
+
+const semanticGroupsBySpelling = new Map<string, Set<number>>()
+for (const [groupIndex, group] of SEMANTIC_CONFLICT_GROUPS.entries()) {
+  for (const spelling of group) {
+    const key = spelling.toLocaleLowerCase('en-US')
+    const memberships = semanticGroupsBySpelling.get(key) ?? new Set<number>()
+    memberships.add(groupIndex)
+    semanticGroupsBySpelling.set(key, memberships)
+  }
+}
+
+function hasSemanticConflict(left: VocabularyWord, right: VocabularyWord) {
+  const leftGroups = semanticGroupsBySpelling.get(left.spelling.toLocaleLowerCase('en-US'))
+  const rightGroups = semanticGroupsBySpelling.get(right.spelling.toLocaleLowerCase('en-US'))
+  return !!leftGroups && !!rightGroups && [...leftGroups].some(group => rightGroups.has(group))
+}
 
 const normalizeMeaning = (text: string) => text.normalize('NFKC').trim()
 const meaningParts = (text: string) => new Set(normalizeMeaning(text).split(/[、，,；;\/\s]+/u).map(part => part.replace(/[.…·]/gu, '')).filter(Boolean))
@@ -79,7 +109,7 @@ function chooseDistractors(target: VocabularyWord, words: VocabularyWord[], pool
     for (let offset = 0; offset < pool.length && selected.length < 7; offset++) {
       const candidate = pool[(start + offset) % pool.length]!
       const meaning = normalizeMeaning(candidate.meaning)
-      if (candidate.id === target.id || meanings.has(meaning) || (rejectOverlap && overlapsMeaning(target.meaning, candidate.meaning))) continue
+      if (candidate.id === target.id || meanings.has(meaning) || hasSemanticConflict(target, candidate) || (rejectOverlap && overlapsMeaning(target.meaning, candidate.meaning))) continue
       meanings.add(meaning)
       selected.push(candidate)
     }
