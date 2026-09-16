@@ -239,6 +239,37 @@ test('iPhone 八选一保持两列四行、长释义换行并自动保存切题'
   await page.screenshot({ path: testInfo.outputPath('mobile-screening.png'), fullPage: true })
 })
 
+test('iPhone 触摸切题后不会保留上一题按钮的深色状态', async ({ browser }) => {
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, serviceWorkers: 'block' })
+  const page = await context.newPage()
+  await useTestVocabulary(page)
+  await page.goto('/#screening')
+  const first = questions[0]!
+  const selected = card(page).getByRole('button').filter({ has: page.getByText(first.coreMeaning, { exact: true }) })
+  const box = await selected.boundingBox()
+  expect(box).not.toBeNull()
+  const point = { x: box!.x + box!.width / 2, y: box!.y + box!.height / 2 }
+  await page.touchscreen.tap(point.x, point.y)
+  await expect(card(page).getByRole('heading', { name: questions[1]!.spelling, exact: true })).toBeVisible({ timeout: 3000 })
+
+  const state = await page.evaluate(({ x, y }) => {
+    const touched = document.elementFromPoint(x, y)?.closest<HTMLElement>('.answer-option')
+    const reference = Array.from(document.querySelectorAll<HTMLElement>('.answer-option')).find(option => option !== touched)
+    const style = (element: HTMLElement | undefined | null) => element ? {
+      background: getComputedStyle(element).backgroundColor,
+      border: getComputedStyle(element).borderColor,
+    } : null
+    return {
+      touched: style(touched),
+      reference: style(reference),
+      answerHasFocus: document.activeElement?.classList.contains('answer-option') ?? false,
+    }
+  }, point)
+  expect(state.touched).toEqual(state.reference)
+  expect(state.answerHasFocus).toBe(false)
+  await context.close()
+})
+
 test('完整初筛、复筛、CSV、打印、备份恢复及窄屏布局', async ({ page }, testInfo) => {
   await useTestVocabulary(page)
   const errors: string[] = []

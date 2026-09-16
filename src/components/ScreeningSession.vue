@@ -29,6 +29,11 @@ const { question, options, phase, records, latest, wrongWords, submit, storageEr
 const feedback = computed(() => phase.value === 'feedback')
 const saveStatus = computed(() => phase.value === 'loading' ? '正在读取存档…' : phase.value === 'saving' ? '正在保存…' : phase.value === 'error' ? '存档需要处理' : records.value.length ? '进度与错词已保存在本机' : '答题后自动保存到本机')
 const actionDisabled = computed(() => actionBusy.value || !!pending.value || ['loading', 'saving'].includes(phase.value))
+async function chooseAnswer(event: MouseEvent, questionId: string, optionId: string) {
+  const button = event.currentTarget as HTMLButtonElement | null
+  button?.blur()
+  await submit(questionId, optionId)
+}
 async function backupScreening() {
   if (actionDisabled.value || !records.value.length) return
   actionBusy.value = true
@@ -113,7 +118,7 @@ watch(question, async () => {
         <div class="answer-options" role="group" :aria-label="`${question.spelling} 的核心中文词义`" :key="question.id">
           <button v-for="(option, optionIndex) in options" :key="option.id" type="button" class="answer-option"
             :disabled="phase !== 'ready'" :class="{ selected: pending?.selectedOptionId === option.id, 'is-correct': feedback && option.id === question.correctOptionId, 'is-wrong': feedback && option.id === latest?.selectedOptionId && latest?.result === 'wrong' }"
-            @click="submit(question.id, option.id)">
+            @click="chooseAnswer($event, question.id, option.id)">
             <span class="option-letter" aria-hidden="true">{{ 'ABCDEFGH'[optionIndex] }}</span><span>{{ option.text }}</span>
             <span v-if="feedback && option.id === question.correctOptionId" class="option-result">✓ 正确</span>
             <span v-else-if="feedback && option.id === latest?.selectedOptionId" class="option-result">× 所选</span>
