@@ -94,6 +94,11 @@ watch(() => props.active, active => { if (active) void loadSummary() }, { immedi
           <li>确认名称为“拾词”，点击右上角的<strong>添加</strong>。</li>
         </ol>
         <p>首次联网完整打开一次后即可离线使用。以后点击主屏幕上的“拾词”会独立打开；应用按竖屏优先设计。</p>
+        <ul>
+          <li>学习数据只保存在当前设备，不会上传到服务器。</li>
+          <li>Safari 网页与主屏幕应用的存储可能分开，请固定从同一个入口学习。</li>
+          <li>清理 Safari 网站数据或删除应用可能丢失记录，请定期在“备份与恢复”中导出 JSON 备份。</li>
+        </ul>
       </div>
     </details>
   </section>

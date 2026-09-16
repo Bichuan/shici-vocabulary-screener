@@ -32,6 +32,7 @@ const sort = ref('source')
 const page = ref(1)
 const pageSize = 20
 const tableTop = ref<HTMLElement | null>(null)
+const licenseUrl = `${import.meta.env.BASE_URL}data/LICENSE.txt`
 const ZOOM_STORAGE_KEY = 'shici-interface-zoom'
 const MIN_ZOOM = 80
 const MAX_ZOOM = 150
@@ -183,7 +184,7 @@ onMounted(loadVocabulary)
 
           <details class="source-details"><summary>词库来源与检查说明 <span>可追溯的原始数据</span></summary><div>
             <p>来源：<a :href="bundle.source.repository" target="_blank" rel="noreferrer">exam-data / NETEMVocabulary ↗</a>，第三方按 2024 年大纲整理，尚未核对更新年份大纲。</p>
-            <p>固定快照：<code>{{ bundle.source.commit.slice(0, 12) }}</code>。数据采用 <a href="/data/LICENSE.txt" target="_blank" rel="noreferrer">{{ bundle.source.license }}</a> 许可，原始释义保持不变。</p>
+            <p>固定快照：<code>{{ bundle.source.commit.slice(0, 12) }}</code>。数据采用 <a :href="licenseUrl" target="_blank" rel="noreferrer">{{ bundle.source.license }}</a> 许可，原始释义保持不变。</p>
             <p>原词库 {{ bundle.report.sourceCount.toLocaleString('en-US') }} 条，已按确认清单排除 {{ bundle.report.excludedCount ?? 0 }} 个词（基础词及低频细分词），当前保留 {{ bundle.words.length.toLocaleString('en-US') }} 条。</p>
             <p>全部 5,220 个词均可筛查，正确项和七个干扰项都直接取自原始词表。进度与错词自动保存在当前浏览器，支持错词复筛、导出和打印。</p>
             <ul v-if="bundle.report.issues.length"><li v-for="(item, index) in bundle.report.issues" :key="index">{{ item.word }}：{{ item.message }}</li></ul>

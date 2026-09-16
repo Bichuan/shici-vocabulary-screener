@@ -125,8 +125,9 @@ body{overflow-x:hidden}main{min-width:0}
 .install-guide[open] summary::after{content:"−"}
 .install-guide summary small{margin-left:auto;color:#8b9687;font-size:10px;font-weight:400}
 .install-guide>div{border-top:1px solid var(--line);padding:15px 20px 18px}
-.install-guide ol{margin:0;padding-left:20px;color:#596b5a;font-size:12px;line-height:1.9}
+.install-guide ol,.install-guide ul{margin:0;padding-left:20px;color:#596b5a;font-size:12px;line-height:1.9}
 .install-guide p{margin-top:11px;color:#7a8679;font-size:11px}
+.install-guide ul{margin-top:10px;color:#7a675f}
 @media(max-width:760px){
   .install-guide{margin-top:18px;scroll-margin-top:calc(78px + env(safe-area-inset-top))}
   .install-guide summary{min-height:52px;padding:13px 15px}
