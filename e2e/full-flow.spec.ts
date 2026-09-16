@@ -57,6 +57,61 @@ test('iPhone 首页显示进度、四个入口和安全区底部导航', async (
   expect(errors).toEqual([])
 })
 
+
+test('iPhone 八选一保持两列四行、长释义换行并自动保存切题', async ({ page }, testInfo) => {
+  await useTestVocabulary(page)
+
+  for (const width of [375, 390, 430]) {
+    await page.setViewportSize({ width, height: 844 })
+    await page.goto('/#screening')
+    await expect(card(page)).toBeVisible()
+    await expect(card(page).locator('.target-word > span')).toHaveCount(0)
+    await expect(card(page).locator('.answer-option')).toHaveCount(8)
+    const layout = await card(page).locator('.answer-option').evaluateAll(buttons => {
+      const rects = buttons.map(button => button.getBoundingClientRect())
+      return {
+        columns: new Set(rects.map(rect => Math.round(rect.left))).size,
+        rows: new Set(rects.map(rect => Math.round(rect.top))).size,
+        minHeight: Math.min(...rects.map(rect => rect.height)),
+      }
+    })
+    expect(layout.columns).toBe(2)
+    expect(layout.rows).toBe(4)
+    expect(layout.minHeight).toBeGreaterThanOrEqual(58)
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+  }
+
+  await page.setViewportSize({ width: 390, height: 844 })
+  const longText = '这是一个用于检查手机按钮自动换行且不会撑破两列布局的较长核心释义'
+  const meaning = card(page).locator('.answer-option').first().locator('span').nth(1)
+  const originalText = await meaning.textContent()
+  await meaning.evaluate((element, text) => { element.textContent = text }, longText)
+  const longLayout = await card(page).locator('.answer-option').first().evaluate(button => ({
+    clientWidth: button.clientWidth,
+    scrollWidth: button.scrollWidth,
+    height: button.getBoundingClientRect().height,
+  }))
+  expect(longLayout.scrollWidth).toBeLessThanOrEqual(longLayout.clientWidth)
+  expect(longLayout.height).toBeGreaterThanOrEqual(60)
+  await meaning.evaluate((element, text) => { element.textContent = text }, originalText)
+
+  const first = questions[0]!
+  const firstWrong = first.options.find(option => option.id !== first.correctOptionId)!
+  await card(page).getByRole('button').filter({ has: page.getByText(firstWrong.text, { exact: true }) }).click()
+  await expect(card(page).locator('.answer-option.is-correct')).toContainText(first.coreMeaning)
+  await page.waitForTimeout(700)
+  await expect(card(page).getByRole('heading', { name: first.spelling, exact: true })).toBeVisible()
+  await expect(card(page).getByRole('heading', { name: questions[1]!.spelling, exact: true })).toBeVisible({ timeout: 2000 })
+
+  const second = questions[1]!
+  await card(page).getByRole('button').filter({ has: page.getByText(second.coreMeaning, { exact: true }) }).click()
+  await expect(card(page).locator('.answer-feedback')).toContainText(second.coreMeaning)
+  await page.reload()
+  await expect(card(page).getByRole('heading', { name: questions[2]!.spelling, exact: true })).toBeVisible()
+  await expect(page.locator('.screening-progress')).toContainText('已筛选 2 / 48 词')
+  await page.screenshot({ path: testInfo.outputPath('mobile-screening.png'), fullPage: true })
+})
+
 test('完整初筛、复筛、CSV、打印、备份恢复及窄屏布局', async ({ page }, testInfo) => {
   await useTestVocabulary(page)
   const errors: string[] = []

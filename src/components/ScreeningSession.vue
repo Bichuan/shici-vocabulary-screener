@@ -86,7 +86,7 @@ watch(question, async () => {
 </script>
 
 <template>
-  <section class="screening-preview" aria-label="单词筛查">
+  <section class="screening-preview screening-session" aria-label="单词筛查">
     <div class="screening-heading"><div><div class="eyebrow">ONE WORD AT A TIME</div><h1>这个词，是什么意思？</h1></div><span class="pill">{{ isReview ? '错词复筛' : `${questions.length} 词完整版` }}</span></div>
     <p class="preview-note">{{ isReview ? '只筛查之前答错的词，答对后移出待复筛列表。' : '全部选项均取自原始词表，词序按首字母交错随机。再次打开即可继续上次进度。' }}</p>
     <p class="save-status" role="status" aria-live="polite">{{ saveStatus }}</p>
