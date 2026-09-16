@@ -25,6 +25,9 @@ async function answer(page: Page, index: number, correct = true) {
   await expect(page.locator('.answer-feedback:visible strong')).toHaveCount(0, { timeout: 5000 })
 }
 
+test.describe('PWA 离线能力', () => {
+  test.use({ serviceWorkers: 'allow' })
+
 test('PWA 外壳声明独立启动、竖屏策略、图标和安装说明', async ({ page, request }, testInfo) => {
   const response = await request.get('/manifest.webmanifest')
   expect(response.ok()).toBe(true)
@@ -81,6 +84,67 @@ test('PWA 外壳声明独立启动、竖屏策略、图标和安装说明', asyn
   await page.waitForTimeout(500)
   await page.screenshot({ path: testInfo.outputPath('pwa-install-guide.png') })
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+})
+
+
+test('首次联网缓存后可离线打开首页、词库、筛查与复筛', async ({ page, context }) => {
+  const errors: string[] = []
+  page.on('pageerror', error => errors.push(error.message))
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto('/')
+  await page.evaluate(async () => { await navigator.serviceWorker.ready })
+  await page.reload()
+  await expect.poll(() => page.evaluate(() => !!navigator.serviceWorker.controller)).toBe(true)
+
+  const cacheState = await page.evaluate(async () => {
+    const names = (await caches.keys()).filter(name => name.startsWith('shici-offline-'))
+    const cache = await caches.open(names[0]!)
+    const paths = (await cache.keys()).map(request => new URL(request.url).pathname)
+    return { names, paths }
+  })
+  expect(cacheState.names).toHaveLength(1)
+  expect(cacheState.paths.some(path => path.endsWith('/index.html'))).toBe(true)
+  expect(cacheState.paths.some(path => path.endsWith('/data/vocabulary.json'))).toBe(true)
+  expect(cacheState.paths.some(path => /\/assets\/index-.+\.js$/.test(path))).toBe(true)
+  expect(cacheState.paths.some(path => /\/assets\/index-.+\.css$/.test(path))).toBe(true)
+
+  await context.setOffline(true)
+  try {
+    await page.goto('/?offline=home')
+    await expect(page.getByRole('heading', { name: '从这里继续筛查。' })).toBeVisible()
+    await expect(page.locator('.home-progress-card strong')).toContainText('/ 5,220 词')
+
+    await page.goto('/?offline=vocabulary#vocabulary')
+    await expect(page.locator('.word-count')).toContainText('5,220')
+    await expect(page.locator('.vocabulary-section')).toBeVisible()
+
+    await page.goto('/?offline=screening#screening')
+    await expect(page.getByRole('heading', { name: '这个词，是什么意思？' })).toBeVisible()
+    await expect(card(page).locator('.answer-option')).toHaveCount(8)
+    await card(page).locator('.answer-option').first().click()
+    await expect(card(page).locator('.answer-feedback strong')).toBeVisible()
+
+    await page.goto('/?offline=resume#screening')
+    await expect(page.locator('.screening-progress')).toContainText('已筛选 1 / 5220 词')
+
+    await page.goto('/?offline=review#review')
+    await expect(page.getByRole('heading', { name: '把还没记住的词，再筛一遍。' })).toBeVisible()
+    await expect(page.locator('.review-overview')).toContainText('已筛选 1 词')
+
+    const activeBefore = await page.evaluate(() => navigator.serviceWorker.controller?.scriptURL)
+    await page.evaluate(async () => {
+      try { await (await navigator.serviceWorker.getRegistration())?.update() } catch { /* 断网更新失败时保留当前版本 */ }
+    })
+    await page.goto('/?offline=after-update-failure')
+    await expect(page.getByRole('heading', { name: '从这里继续筛查。' })).toBeVisible()
+    const activeAfter = await page.evaluate(() => navigator.serviceWorker.controller?.scriptURL)
+    expect(activeAfter).toBe(activeBefore)
+  } finally {
+    await context.setOffline(false)
+  }
+  expect(errors).toEqual([])
+})
+
 })
 
 test('iPhone 首页显示进度、四个入口和安全区底部导航', async ({ page }, testInfo) => {
@@ -343,11 +407,16 @@ test('当前筛查可单独备份、继续使用或确认后重置', async ({ pa
   await expect(page.locator('.screening-action-message')).toContainText('可以继续筛选')
   await expect(page.locator('.screening-progress')).toContainText('已筛选 1 / 48 词')
 
-  page.once('dialog', dialog => dialog.dismiss())
-  await page.getByRole('button', { name: '重置筛查' }).click()
+  const dismissDialog = page.waitForEvent('dialog')
+  const dismissClick = page.getByRole('button', { name: '重置筛查' }).click()
+  await (await dismissDialog).dismiss()
+  await dismissClick
   await expect(page.locator('.screening-progress')).toContainText('已筛选 1 / 48 词')
-  page.once('dialog', dialog => dialog.accept())
-  await page.getByRole('button', { name: '重置筛查' }).click()
+
+  const acceptDialog = page.waitForEvent('dialog')
+  const acceptClick = page.getByRole('button', { name: '重置筛查' }).click()
+  await (await acceptDialog).accept()
+  await acceptClick
   await expect(page.locator('.screening-progress')).toContainText('已筛选 0 / 48 词')
   await expect(page.getByRole('button', { name: '备份当前筛查' })).toBeDisabled()
 })

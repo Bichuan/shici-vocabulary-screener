@@ -93,7 +93,7 @@ watch(() => props.active, active => { if (active) void loadSummary() }, { immedi
           <li>在分享菜单中选择<strong>添加到主屏幕</strong>。</li>
           <li>确认名称为“拾词”，点击右上角的<strong>添加</strong>。</li>
         </ol>
-        <p>以后直接点击主屏幕上的“拾词”即可独立打开。应用按竖屏优先设计。</p>
+        <p>首次联网完整打开一次后即可离线使用。以后点击主屏幕上的“拾词”会独立打开；应用按竖屏优先设计。</p>
       </div>
     </details>
   </section>

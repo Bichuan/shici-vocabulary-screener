@@ -8,6 +8,7 @@ export default defineConfig({
   use: {
     baseURL: 'http://127.0.0.1:4174',
     headless: true,
+    serviceWorkers: 'block',
     launchOptions: {
       executablePath: process.env.TEST_BROWSER_PATH ?? (process.platform === 'win32' ? 'C:/Program Files/Google/Chrome/Application/chrome.exe' : undefined),
     },
