@@ -17,6 +17,20 @@ function start(storage: ScreeningStorage, count = 48, version = bundle.contentVe
 }
 afterEach(() => { scopes.splice(0).forEach(s => s.stop()) })
 
+async function readSession(factory: IDBFactory, key: string) {
+  const database = await new Promise<IDBDatabase>((resolve, reject) => {
+    const request = factory.open('shici-learning', 1)
+    request.onsuccess = () => resolve(request.result)
+    request.onerror = () => reject(request.error)
+  })
+  return new Promise<unknown>((resolve, reject) => {
+    const transaction = database.transaction('sessions', 'readonly')
+    const request = transaction.objectStore('sessions').get(key)
+    transaction.oncomplete = () => { database.close(); resolve(request.result) }
+    transaction.onabort = () => { database.close(); reject(transaction.error) }
+  })
+}
+
 describe('IndexedDB 本地存档', () => {
   it('反馈期间关闭再打开，从下一题继续并保留错词、进度和任务标识', async () => {
     const factory = new IDBFactory()
@@ -57,12 +71,48 @@ describe('IndexedDB 本地存档', () => {
     await disk.save(legacy, 0)
     const session = start(createIndexedDBStorage(factory))
     await session.ready
+    const persisted = await disk.load() as ScreeningSnapshot
+    expect(persisted.questionSignature).toMatch(/^questions-v3:48:/)
+    expect(persisted.records[0]).toMatchObject({ spelling: 'abandon', coreMeaning: '抛弃', selectedMeaning: '抛弃' })
+    expect(await readSession(factory, 'migration-backup:initial-screening')).toMatchObject({ source: legacy })
     expect(session.records.value[0]).toMatchObject({ spelling: 'abandon', coreMeaning: '抛弃', selectedMeaning: '抛弃', result: 'correct' })
     expect(session.question.value?.spelling).toBe('absorb')
     await session.submit(session.question.value!.id, session.question.value!.correctOptionId)
     const saved = await disk.load() as ScreeningSnapshot
     expect(saved.revision).toBe(2)
     expect(saved.questionSignature).toMatch(/^questions-v3:48:/)
+  })
+
+  it('迁移写入失败时保留原始记录并锁住答题，不能用新进度覆盖', async () => {
+    const factory = new IDBFactory()
+    const disk = createIndexedDBStorage(factory)
+    const current = buildSampleQuestions(bundle.words, () => 0.999999, false).slice(0, 48)
+    const question = current[0]!
+    const taskId = 'migration-failure-task'
+    const legacy: ScreeningSnapshot = {
+      schemaVersion: 1,
+      dictionaryVersion: bundle.contentVersion,
+      questionSignature: 'questions-v2:48:legacy',
+      taskId,
+      revision: 1,
+      records: [{
+        id: 'migration-failure-answer', taskId, wordId: question.wordId,
+        dictionaryVersion: bundle.contentVersion, questionVersion: question.version,
+        selectedOptionId: question.correctOptionId, result: 'correct', answeredAt: '2026-09-16T00:00:00.000Z',
+        spelling: question.spelling, coreMeaning: question.coreMeaning, selectedMeaning: question.coreMeaning,
+      }],
+    }
+    await disk.save(legacy, 0)
+    const save = vi.fn(disk.save)
+    const migrate = vi.fn(async () => { throw new Error('存档迁移失败。原存档已保留，未覆盖。') })
+    const session = start({ load: disk.load, save, migrate })
+    await session.ready
+
+    expect(session.phase.value).toBe('error')
+    expect(session.storageError.value).toContain('原存档已保留')
+    expect(await session.submit(current[1]!.id, current[1]!.correctOptionId)).toBe(false)
+    expect(save).not.toHaveBeenCalled()
+    expect(await disk.load()).toEqual(legacy)
   })
 
   it('题目语义规则升级后保留旧版进度，并替换已移除的歧义选项', () => {

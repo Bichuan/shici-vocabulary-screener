@@ -5,7 +5,7 @@ import { readFileSync } from 'node:fs'
 import type { VocabularyBundle } from '../src/domain/types.ts'
 import { buildSampleQuestions } from '../src/domain/questions.ts'
 import { createIndexedDBStorage, questionSignature, type ScreeningSnapshot } from '../src/domain/screeningStorage.ts'
-import { activeRound, beginReview, createReviewStorage, reviewSessionStorage, reviewWords, roundQuestions, validateReviewHistory, type ReviewHistory } from '../src/domain/review.ts'
+import { activeRound, beginReview, createReviewStorage, loadValidatedReviewHistory, reviewSessionStorage, reviewWords, roundQuestions, validateReviewHistory, type ReviewHistory } from '../src/domain/review.ts'
 import { useScreening } from '../src/domain/useScreening.ts'
 
 const bundle = JSON.parse(readFileSync(new URL('../public/data/vocabulary.json', import.meta.url), 'utf8')) as VocabularyBundle
@@ -62,6 +62,20 @@ describe('错词复筛', () => {
     expect(reviewWords(initial, history)).toHaveLength(2)
     expect(validateReviewHistory(await disk.load(), initial, questions)).toEqual(history)
     await expect(beginReview(initial, history, questions, disk)).rejects.toThrow('没有待复筛')
+  })
+
+  it('复筛中的旧题目版本会在继续前完成原子迁移', async () => {
+    const factory = new IDBFactory()
+    const initial = initialSnapshot()
+    const disk = createReviewStorage(factory)
+    const current = await beginReview(initial, validateReviewHistory(undefined, initial, questions), questions, disk)
+    const legacy = structuredClone(current)
+    legacy.rounds[0]!.snapshot.questionSignature = 'questions-v2:2:legacy'
+    await disk.save(legacy, current.revision)
+
+    const migrated = await loadValidatedReviewHistory(createReviewStorage(factory), initial, questions)
+    expect(migrated.rounds[0]!.snapshot.questionSignature).toBe(questionSignature(roundQuestions(migrated.rounds[0]!, questions)))
+    expect(await disk.load()).toEqual(migrated)
   })
 
   it('未完成初筛或没有错词时不创建任务', async () => {

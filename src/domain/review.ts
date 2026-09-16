@@ -56,6 +56,16 @@ export function validateReviewHistory(raw: unknown, initial: ScreeningSnapshot, 
   if (history.revision !== revision) invalid()
   return previous
 }
+export async function loadValidatedReviewHistory(storage: RevisionStorage<ReviewHistory>, initial: ScreeningSnapshot, questions: ScreeningQuestion[]) {
+  const source = await storage.load()
+  const history = validateReviewHistory(source, initial, questions)
+  if (source !== undefined && source !== null && JSON.stringify(source) !== JSON.stringify(history)) {
+    if (!storage.migrate) throw new Error('当前存储无法安全迁移复筛记录。原存档已保留，未覆盖。')
+    await storage.migrate(source as ReviewHistory, history)
+  }
+  return history
+}
+
 export async function beginReview(initial: ScreeningSnapshot, history: ReviewHistory, questions: ScreeningQuestion[], storage: RevisionStorage<ReviewHistory>) {
   if (initial.records.length !== questions.length) throw new Error('请先完成初筛，再开始错词复筛。')
   if (activeRound(history)) return history

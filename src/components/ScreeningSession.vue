@@ -117,7 +117,7 @@ watch(question, async () => {
       </div>
       <div v-else-if="phase === 'completed'" class="message-card completion-card" role="status"><h2 ref="wordHeading" tabindex="-1">{{ isReview ? '这次复筛已完成' : '全部词汇已筛选完成' }}</h2><p>{{ isReview ? '结果已保存。仍未答对的词可以再次复筛，历史错词会继续保留。' : `本次已完成全部 ${questions.length} 个词。` }}</p><button v-if="isReview" class="secondary" @click="emit('back')">查看复筛结果</button><a v-else class="secondary" href="#review">查看错词与复筛</a></div>
       <details v-if="!isReview" class="wrong-word-list"><summary>查看初筛记录的错词</summary><p class="preview-note">只保留单词和正确核心义，供后续复筛、导出及打印背诵。</p><a class="secondary" href="#review">前往错词与复筛 →</a><div v-if="wrongWords.length" class="table-wrap"><table><thead><tr><th scope="col">英文单词</th><th scope="col">正确核心义</th></tr></thead><tbody><tr v-for="word in wrongWords" :key="word.wordId"><td class="spelling">{{ word.spelling }}</td><td class="meaning">{{ word.coreMeaning }}</td></tr></tbody></table></div><p v-else class="preview-note">暂无错词记录。</p></details>
-      <p class="preview-footnote">记录保存在当前浏览器，清除网站数据会删除存档；隐私模式不适合长期保存。</p>
+      <p class="preview-footnote">记录只保存在当前设备的这个应用中；清除网站数据会删除存档，隐私模式不适合长期保存。</p>
     </template>
   </section>
 </template>

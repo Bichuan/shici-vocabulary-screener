@@ -2,8 +2,8 @@
 import { computed, nextTick, ref, shallowRef, watch } from 'vue'
 import type { VocabularyWord } from '../domain/types.ts'
 import { buildSampleQuestions, type ScreeningQuestion } from '../domain/questions.ts'
-import { createIndexedDBStorage, validateSnapshot, type ScreeningSnapshot, type ScreeningStorage, type RevisionStorage } from '../domain/screeningStorage.ts'
-import { activeRound, beginReview, createReviewStorage, reviewSessionStorage, reviewWords, roundQuestions, validateReviewHistory, type ReviewHistory } from '../domain/review.ts'
+import { createIndexedDBStorage, loadValidatedSnapshot, type ScreeningSnapshot, type ScreeningStorage, type RevisionStorage } from '../domain/screeningStorage.ts'
+import { activeRound, beginReview, createReviewStorage, loadValidatedReviewHistory, reviewSessionStorage, reviewWords, roundQuestions, type ReviewHistory } from '../domain/review.ts'
 import { backupFileName, createMemorizationCsv, csvFileName, historicalWrongWords, readLearningBackup, restoreLearningBackup, validateLearningBackup } from '../domain/studyTools.ts'
 import ScreeningSession from './ScreeningSession.vue'
 
@@ -30,9 +30,9 @@ async function load() {
   loading.value = true; error.value = ''
   try {
     questions.value = buildSampleQuestions(props.words)
-    initial.value = validateSnapshot(await createIndexedDBStorage().load(), props.dictionaryVersion, questions.value)
+    initial.value = await loadValidatedSnapshot(createIndexedDBStorage(), props.dictionaryVersion, questions.value)
     disk = createReviewStorage()
-    history.value = initial.value ? validateReviewHistory(await disk.load(), initial.value, questions.value) : null
+    history.value = initial.value ? await loadValidatedReviewHistory(disk, initial.value, questions.value) : null
   } catch (cause) { error.value = cause instanceof Error ? cause.message : '无法读取错词存档，请重试。' }
   finally {
     loading.value = false

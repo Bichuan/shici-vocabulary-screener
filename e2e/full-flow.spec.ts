@@ -334,6 +334,28 @@ test('键盘作答、取消恢复和无效备份均保护现有进度', async ({
   await expect(page.locator('.review-overview')).toContainText('已筛选 1 词')
 })
 
+test('iPhone 页面关闭并重新打开后从下一题继续，作答期间不上传学习数据', async ({ page, context }) => {
+  const networkWrites: string[] = []
+  context.on('request', request => {
+    if (!['GET', 'HEAD'].includes(request.method())) networkWrites.push(request.method() + ' ' + request.url())
+  })
+  await useTestVocabulary(page)
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto('/#screening')
+  await card(page).locator('.answer-option').first().click()
+  await expect(card(page).locator('.answer-feedback strong')).toBeVisible()
+  await page.evaluate(() => window.dispatchEvent(new PageTransitionEvent('pagehide', { persisted: false })))
+  await page.close()
+
+  const reopened = await context.newPage()
+  await useTestVocabulary(reopened)
+  await reopened.setViewportSize({ width: 390, height: 844 })
+  await reopened.goto('/#screening')
+  await expect(reopened.locator('.screening-progress')).toContainText('已筛选 1 / 48 词')
+  await expect(reopened.locator('.question-card:visible').getByRole('heading', { name: questions[1]!.spelling, exact: true })).toBeVisible()
+  expect(networkWrites).toEqual([])
+})
+
 test('48 词 A4 三栏纵向排列与打印按钮', async ({ page }, testInfo) => {
   await useTestVocabulary(page)
   await page.goto('/#print')

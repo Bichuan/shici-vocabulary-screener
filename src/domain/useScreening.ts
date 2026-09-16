@@ -1,7 +1,7 @@
 import { computed, onScopeDispose, ref, watch, type Ref } from 'vue'
 import type { AnswerRecord } from './types.ts'
 import { shuffleOptions, type ScreeningQuestion } from './questions.ts'
-import { createIndexedDBStorage, questionSignature, StorageConflict, validateSnapshot, type ScreeningSnapshot, type ScreeningStorage } from './screeningStorage.ts'
+import { createIndexedDBStorage, loadValidatedSnapshot, questionSignature, StorageConflict, type ScreeningSnapshot, type ScreeningStorage } from './screeningStorage.ts'
 
 export interface SubmittedAnswer extends AnswerRecord {
   spelling: string
@@ -39,7 +39,7 @@ export function useScreening(questions: Ref<ScreeningQuestion[]>, dictionaryVers
     storageError.value = ''
     try {
       repository ??= createIndexedDBStorage()
-      const snapshot = validateSnapshot(await repository.load(), version, questions.value)
+      const snapshot = await loadValidatedSnapshot(repository, version, questions.value)
       if (disposed) return
       if (snapshot) { records.value = snapshot.records; taskId = snapshot.taskId; revision = snapshot.revision }
       // An answer committed during feedback is already complete on the next visit.

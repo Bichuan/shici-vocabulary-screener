@@ -12,6 +12,7 @@ export interface ScreeningSnapshot {
 export interface RevisionStorage<T> {
   load(): Promise<unknown>
   save(snapshot: T, expectedRevision: number): Promise<void>
+  migrate?(source: T, snapshot: T): Promise<void>
 }
 export type ScreeningStorage = RevisionStorage<ScreeningSnapshot>
 export class StorageConflict extends Error {
@@ -104,8 +105,24 @@ export function validateSnapshot(value: unknown, dictionaryVersion: string, ques
   return snapshot
 }
 
+export async function loadValidatedSnapshot(storage: ScreeningStorage, dictionaryVersion: string, questions: ScreeningQuestion[]) {
+  const source = await storage.load()
+  const snapshot = validateSnapshot(source, dictionaryVersion, questions)
+  if (snapshot && snapshot !== source) {
+    if (!storage.migrate) throw new Error('当前存储无法安全迁移。原存档已保留，未覆盖。')
+    await storage.migrate(source as ScreeningSnapshot, snapshot)
+  }
+  return snapshot
+}
+
 /** A single transaction commits the answer and progress together. */
-export function createRevisionStorage<T extends { revision: number }>(key: string, factory: IDBFactory = indexedDB, databaseName = 'shici-learning', compatible: (previous: T, next: T) => boolean = () => true): RevisionStorage<T> {
+export function createRevisionStorage<T extends { revision: number }>(
+  key: string,
+  factory: IDBFactory = indexedDB,
+  databaseName = 'shici-learning',
+  compatible: (previous: T, next: T) => boolean = () => true,
+  migrationCompatible: (previous: T, next: T) => boolean = (previous, next) => previous.revision === next.revision,
+): RevisionStorage<T> {
   let generation: string | null | undefined
   async function open(): Promise<IDBDatabase> {
     return new Promise((resolve, reject) => {
@@ -153,6 +170,31 @@ export function createRevisionStorage<T extends { revision: number }>(key: strin
         tx.onabort = () => { db.close(); reject(conflict ? new StorageConflict() : tx.error ?? new Error('保存失败')) }
       })
     },
+    async migrate(source, snapshot) {
+      const db = await open()
+      return new Promise<void>((resolve, reject) => {
+        const tx = db.transaction('sessions', 'readwrite')
+        const store = tx.objectStore('sessions')
+        const request = store.get(key)
+        const epoch = store.get('storage-generation')
+        let conflict = false
+        epoch.onsuccess = () => {
+          const current = request.result as T | undefined
+          if (!current || (generation !== undefined && generation !== (epoch.result ?? null)) ||
+            JSON.stringify(current) !== JSON.stringify(source) || !migrationCompatible(current, snapshot)) {
+            conflict = true; tx.abort(); return
+          }
+          generation = epoch.result ?? null
+          store.put({ schemaVersion: 1, migratedAt: new Date().toISOString(), source: current }, 'migration-backup:' + key)
+          store.put(snapshot, key)
+        }
+        tx.oncomplete = () => { db.close(); resolve() }
+        tx.onabort = () => {
+          db.close()
+          reject(conflict ? new StorageConflict() : new Error('存档迁移失败。原存档已保留，未覆盖。'))
+        }
+      })
+    },
   }
 }
 
@@ -164,5 +206,9 @@ export function createIndexedDBStorage(factory: IDBFactory = indexedDB, database
       const next = b.records[index]
       return next?.id === record.id && next.wordId === record.wordId && next.result === record.result && next.answeredAt === record.answeredAt
     })
-  })
+  }, (a, b) => a.taskId === b.taskId && a.dictionaryVersion === b.dictionaryVersion && isPreviousSnapshot(a) &&
+    a.revision === b.revision && a.records.length === b.records.length && a.records.every((record, index) => {
+      const next = b.records[index]
+      return next?.id === record.id && next.wordId === record.wordId && next.result === record.result && next.answeredAt === record.answeredAt
+    }))
 }
