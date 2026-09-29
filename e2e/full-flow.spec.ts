@@ -524,12 +524,15 @@ test('多页背诵表每组词只占一张 A4，且没有页内标题', async ({
     })
   }, snapshot)
   await page.reload()
-  await expect(page.locator('.memorization-page')).toHaveCount(3)
+  await expect(page.locator('.memorization-page')).toHaveCount(4)
   await expect(page.locator('.print-table tbody tr')).toHaveCount(216)
   await expect(page.locator('.memorization-title')).toHaveCount(0)
   await page.emulateMedia({ media: 'print' })
-  const pdf = await page.pdf({ path: testInfo.outputPath('a4-three-pages.pdf'), preferCSSPageSize: true })
-  expect(pdf.toString('latin1').match(/\/Type \/Page\b/g)?.length).toBe(3)
+  const pdf = await page.pdf({ path: testInfo.outputPath('a4-four-pages.pdf'), preferCSSPageSize: true })
+  expect(pdf.toString('latin1').match(/\/Type \/Page\b/g)?.length).toBe(4)
+  await page.addStyleTag({ content: '@page { size: A4 portrait; margin: 20mm }' })
+  const pdfWithWideMargins = await page.pdf({ path: testInfo.outputPath('a4-wide-margins.pdf'), preferCSSPageSize: true })
+  expect(pdfWithWideMargins.toString('latin1').match(/\/Type \/Page\b/g)?.length).toBe(4)
 })
 
 test('界面缩放按钮、快捷键和本地记忆', async ({ page }) => {

@@ -10,8 +10,8 @@ const error = ref('')
 const wordList = ref<{ spelling: string; coreMeaning: string }[]>([])
 const count = computed(() => wordList.value.length)
 const pages = computed(() => {
-  // Leave room for meanings that wrap onto a second line on A4 paper.
-  const wordsPerPage = 72
+  // Keep each three-column group short enough for mobile print margins.
+  const wordsPerPage = 60
   return Array.from({ length: Math.ceil(wordList.value.length / wordsPerPage) }, (_, page) => {
     const items = wordList.value.slice(page * wordsPerPage, (page + 1) * wordsPerPage)
     const size = Math.ceil(items.length / 3)
