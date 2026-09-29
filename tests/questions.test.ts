@@ -42,13 +42,16 @@ describe('八选一题目边界', () => {
     expect(question.options).toEqual(original)
     expect(() => shuffleOptions(original, () => 1)).toThrow()
   })
-  it('只在每 80 词的相近词频区间内打乱题序', () => {
+  it('每 80 词混入词表前后各层，同时不丢失或重复题目', () => {
     const original = buildSampleQuestions(bundle.words, () => 0.999999, false)
     const randomized = buildSampleQuestions(bundle.words, () => 0, true)
     expect(randomized.map(question => question.wordId)).not.toEqual(original.map(question => question.wordId))
-    for (let start = 0; start < original.length; start += 80) {
-      expect(new Set(randomized.slice(start, start + 80).map(question => question.wordId)))
-        .toEqual(new Set(original.slice(start, start + 80).map(question => question.wordId)))
+    expect(new Set(randomized.map(question => question.wordId))).toEqual(new Set(original.map(question => question.wordId)))
+    const ranks = new Map([...bundle.words].sort((a, b) => a.sourceOrder - b.sourceOrder).map((word, index) => [word.id, index]))
+    for (let start = 0; start + 80 <= randomized.length; start += 80) {
+      const batch = randomized.slice(start, start + 80)
+      expect(batch.filter(question => ranks.get(question.wordId)! >= original.length / 2)).toHaveLength(40)
+      expect(new Set(batch.map(question => Math.floor(ranks.get(question.wordId)! * 10 / original.length))).size).toBe(10)
     }
   })
   it('人工确认的同义或近义词不会互为干扰项', () => {

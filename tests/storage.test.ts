@@ -4,7 +4,7 @@ import { IDBFactory } from 'fake-indexeddb'
 import { readFileSync } from 'node:fs'
 import type { VocabularyBundle } from '../src/domain/types.ts'
 import { buildSampleQuestions } from '../src/domain/questions.ts'
-import { createIndexedDBStorage, validateSnapshot, type ScreeningSnapshot, type ScreeningStorage } from '../src/domain/screeningStorage.ts'
+import { createIndexedDBStorage, questionSignature, validateSnapshot, type ScreeningSnapshot, type ScreeningStorage } from '../src/domain/screeningStorage.ts'
 import { useScreening } from '../src/domain/useScreening.ts'
 
 const bundle = JSON.parse(readFileSync(new URL('../public/data/vocabulary.json', import.meta.url), 'utf8')) as VocabularyBundle
@@ -32,6 +32,34 @@ async function readSession(factory: IDBFactory, key: string) {
 }
 
 describe('IndexedDB 本地存档', () => {
+  it('难度混排后保留已有答题和错词，下一题只取未筛词', async () => {
+    const factory = new IDBFactory()
+    const storage = createIndexedDBStorage(factory)
+    const oldOrder = buildSampleQuestions(bundle.words, () => 0.999999, false)
+    const mixedOrder = buildSampleQuestions(bundle.words, () => 0, true)
+    const taskId = 'difficulty-reorder-task'
+    const records = oldOrder.slice(0, 2500).map((question, index) => {
+      const option = index === 0 ? question.options.find(item => item.id !== question.correctOptionId)! : question.options[0]!
+      return {
+        id: `existing-answer-${index}`, taskId, wordId: question.wordId, dictionaryVersion: bundle.contentVersion,
+        questionVersion: question.version, selectedOptionId: option.id, result: index === 0 ? 'wrong' as const : 'correct' as const,
+        answeredAt: '2026-09-29T00:00:00.000Z', spelling: question.spelling,
+        coreMeaning: question.coreMeaning, selectedMeaning: option.text,
+      }
+    })
+    expect(questionSignature(mixedOrder)).toBe(questionSignature(oldOrder))
+    await storage.save({ schemaVersion: 1, taskId, dictionaryVersion: bundle.contentVersion, questionSignature: questionSignature(oldOrder), revision: records.length, records }, 0)
+    const scope = effectScope()
+    scopes.push(scope)
+    const session = scope.run(() => useScreening(ref(mixedOrder), () => bundle.contentVersion, () => true, createIndexedDBStorage(factory)))!
+    await session.ready
+    expect(session.records.value).toHaveLength(2500)
+    expect(session.wrongWords.value).toEqual([records[0]])
+    expect(new Set(records.map(record => record.wordId)).has(session.question.value!.wordId)).toBe(false)
+    await session.submit(session.question.value!.id, session.question.value!.correctOptionId)
+    expect((await storage.load() as ScreeningSnapshot).records).toHaveLength(2501)
+  })
+
   it('反馈期间关闭再打开，从下一题继续并保留错词、进度和任务标识', async () => {
     const factory = new IDBFactory()
     const storage = createIndexedDBStorage(factory)

@@ -178,12 +178,27 @@ export function buildQuestions(words: VocabularyWord[], random: () => number = M
   const issues = validateQuestions(questions, words)
   if (issues.length) throw new Error(issues.join('\n'))
   if (!randomizeOrder) return questions
+  // Draw every batch from the whole source-order range, which roughly moves
+  // from common to rare words, while keeping question content and IDs stable.
+  const sourceOrder = new Map(ordered.map(word => [word.id, word.sourceOrder]))
+  const byFrequency = [...questions].sort((a, b) => sourceOrder.get(a.wordId)! - sourceOrder.get(b.wordId)!)
+  const bandCount = Math.min(10, byFrequency.length)
+  const bands: ScreeningQuestion[][] = Array.from({ length: bandCount }, () => [])
+  for (const [index, question] of byFrequency.entries()) {
+    bands[Math.floor(index * bandCount / byFrequency.length)]!.push(question)
+  }
+  const poolsByBand = bands.map(band => shuffleOptions(band, random))
   const randomized: ScreeningQuestion[] = []
-  // Keep broad frequency progression while alternating initial letters inside
-  // each band, so similar spellings are less likely to appear together.
-  for (let start = 0; start < questions.length; start += 80) {
+  while (randomized.length < questions.length) {
+    const batch: ScreeningQuestion[] = []
+    for (let round = 0; round < 8; round++) {
+      for (const bandIndex of shuffleOptions(bands.map((_, index) => index), random)) {
+        const question = poolsByBand[bandIndex]!.pop()
+        if (question) batch.push(question)
+      }
+    }
     const previous = randomized.at(-1)
-    randomized.push(...interleaveInitials(questions.slice(start, start + 80), random, previous ? initialLetter(previous) : ''))
+    randomized.push(...interleaveInitials(batch, random, previous ? initialLetter(previous) : ''))
   }
   return randomized
 }
