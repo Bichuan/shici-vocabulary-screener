@@ -18,6 +18,7 @@ const loading = ref(false)
 const busy = ref(false)
 const error = ref('')
 const filter = ref<'pending' | 'history'>('pending')
+const exportScope = ref<'pending' | 'history'>('history')
 const toolMessage = ref('')
 const toolBusy = ref(false)
 const restoreInput = ref<HTMLInputElement | null>(null)
@@ -35,6 +36,8 @@ const words = computed(() => initial.value && history.value ? reviewWords(initia
 const pendingWords = computed(() => words.value.filter(w => w.needsReview))
 const shownWords = computed(() => filter.value === 'pending' ? pendingWords.value : words.value)
 const unfinished = computed(() => history.value ? activeRound(history.value) : null)
+const unansweredInRound = computed(() => unfinished.value ? unfinished.value.wordIds.length - unfinished.value.snapshot.records.length : 0)
+const selectedExportCount = computed(() => exportScope.value === 'pending' ? pendingWords.value.length : words.value.length)
 const initialComplete = computed(() => !!initial.value && initial.value.records.length === questions.value.length)
 
 async function load() {
@@ -76,7 +79,7 @@ function transferMessage(result: FileTransferResult, noun: string) {
   return '已取消系统分享，现有学习记录没有改变。'
 }
 async function exportCsv() {
-  if (toolBusy.value) return
+  if (toolBusy.value || exportScope.value !== 'history') return
   const list = words.value.map(word => ({ spelling: word.spelling, coreMeaning: word.coreMeaning }))
   if (!list.length) { toolMessage.value = '暂无历史错词可导出。'; return }
   toolBusy.value = true; toolMessage.value = ''
@@ -158,8 +161,17 @@ function cancelRestore() {
       <div v-if="shownWords.length" class="table-wrap"><table><thead><tr><th scope="col">英文单词</th><th scope="col">核心词义</th><th scope="col">状态</th></tr></thead><tbody><tr v-for="word in shownWords" :key="word.wordId"><td class="spelling">{{ word.spelling }}</td><td class="meaning">{{ word.coreMeaning }}</td><td class="meaning">{{ word.needsReview ? '待复筛' : '复筛已答对' }}</td></tr></tbody></table></div>
       <div v-else class="message-card"><h2>{{ filter === 'history' ? '暂无历史错词' : '暂无待复筛的词' }}</h2><p class="preview-note">{{ words.length ? '之前的错词已在复筛中答对，可以在历史错词中查看。' : initialComplete ? '已开放的初筛题全部答对。' : '初筛中答错的词会自动出现在这里。' }}</p></div>
       <section id="review-tools" class="study-tools" aria-label="导出、打印和备份">
-        <h2>导出、打印与备份</h2><p>导出和打印均使用历史错词；复筛答对的词也会保留，方便重复背诵。</p>
-        <div class="tool-actions"><button class="secondary" :disabled="toolBusy || !words.length" @click="exportCsv">导出 Excel CSV</button><a class="secondary" :class="{ disabled: !words.length }" href="#print" :aria-disabled="!words.length">打印背诵表</a><button class="secondary" :disabled="toolBusy" @click="backup">备份学习记录</button><button class="secondary" :disabled="toolBusy" @click="restoreInput?.click()">恢复备份</button><input ref="restoreInput" class="sr-only" type="file" accept="application/json,.json" aria-label="选择学习记录备份文件" @change="selectRestore" /></div>
+        <h2>导出、打印与备份</h2>
+        <div class="export-scope" role="group" aria-label="导出打印词单范围">
+          <button type="button" class="secondary" :aria-pressed="exportScope === 'history'" @click="exportScope = 'history'">全部历史错词（{{ words.length }}）</button>
+          <button type="button" class="secondary" :aria-pressed="exportScope === 'pending'" @click="exportScope = 'pending'">当前仍不会的词（{{ pendingWords.length }}）</button>
+        </div>
+        <p class="export-scope-status" role="status">当前选择 {{ exportScope === 'history' ? '全部历史错词' : '当前仍不会的词' }}，共 {{ selectedExportCount }} 个。</p>
+        <p v-if="exportScope === 'history'" class="export-scope-note">包含复筛中已经答对的历史错词。</p>
+        <p v-else-if="unfinished" class="export-scope-note">本轮还有 {{ unansweredInRound }} 个词未作答，当前词单也包含这些词。完成本轮后才是本轮最终结果。</p>
+        <p v-else-if="!history?.rounds.length" class="export-scope-note">尚未完成首次复筛，当前词单包含初筛答错的词。</p>
+        <p v-if="exportScope === 'pending'" class="export-scope-note">此范围的 CSV 与打印将在下一步接入；目前切回“全部历史错词”即可使用原有导出和打印。</p>
+        <div class="tool-actions"><button class="secondary" :disabled="toolBusy || !words.length || exportScope === 'pending'" @click="exportCsv">导出 Excel CSV</button><a v-if="exportScope === 'history'" class="secondary" :class="{ disabled: !words.length }" href="#print" :aria-disabled="!words.length">打印背诵表</a><button v-else class="secondary" disabled>打印背诵表</button><button class="secondary" :disabled="toolBusy" @click="backup">备份学习记录</button><button class="secondary" :disabled="toolBusy" @click="restoreInput?.click()">恢复备份</button><input ref="restoreInput" class="sr-only" type="file" accept="application/json,.json" aria-label="选择学习记录备份文件" @change="selectRestore" /></div>
         <p v-if="toolMessage" class="tool-message" role="status">{{ toolMessage }}</p>
         <section v-if="restorePreview" class="restore-confirmation" aria-label="确认恢复备份">
           <div><span>待恢复文件</span><strong>{{ restorePreview.fileName }}</strong></div>
