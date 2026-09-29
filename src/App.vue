@@ -5,6 +5,7 @@ import ScreeningSession from './components/ScreeningSession.vue'
 import ReviewPanel from './components/ReviewPanel.vue'
 import PrintSheet from './components/PrintSheet.vue'
 import HomeDashboard from './components/HomeDashboard.vue'
+import type { LearningDictionaryId } from './domain/learningNamespace.ts'
 
 function resolveView(hash: string) {
   if (hash === '#print') return 'print'
@@ -26,8 +27,15 @@ onUnmounted(() => window.removeEventListener('hashchange', syncView))
 
 const netemBundle = ref<VocabularyBundle | null>(null)
 const cetBundle = ref<VocabularyBundle | null>(null)
-const selectedDictionary = ref<'netem' | 'cet6'>('netem')
+type DictionaryChoice = 'netem' | 'cet6'
+const DICTIONARY_STORAGE_KEY = 'shici-selected-dictionary'
+function savedDictionary(): DictionaryChoice {
+  try { return localStorage.getItem(DICTIONARY_STORAGE_KEY) === 'cet6' ? 'cet6' : 'netem' }
+  catch { return 'netem' }
+}
+const selectedDictionary = ref<DictionaryChoice>(savedDictionary())
 const bundle = computed(() => selectedDictionary.value === 'netem' ? netemBundle.value : cetBundle.value)
+const activeDictionaryId = computed<LearningDictionaryId>(() => selectedDictionary.value === 'netem' ? 'netem-2024' : 'cet6-2016-curated')
 const cetError = ref('')
 const loading = ref(true)
 const error = ref('')
@@ -37,8 +45,9 @@ const page = ref(1)
 const pageSize = 20
 const tableTop = ref<HTMLElement | null>(null)
 const licenseUrl = computed(() => `${import.meta.env.BASE_URL}data/${selectedDictionary.value === 'netem' ? '' : 'cet-'}LICENSE.txt`)
-function selectDictionary(dictionary: 'netem' | 'cet6') {
+function selectDictionary(dictionary: DictionaryChoice) {
   selectedDictionary.value = dictionary
+  try { localStorage.setItem(DICTIONARY_STORAGE_KEY, dictionary) } catch { /* 仍可在本次打开期间切换 */ }
   query.value = ''
   page.value = 1
   location.hash = '#'
@@ -170,27 +179,14 @@ onMounted(loadVocabulary)
         </section>
 
         <div v-if="loading || (selectedDictionary === 'cet6' && !bundle && !cetError)" class="message-card" role="status">正在读取本地词库…</div>
-        <div v-else-if="error" class="message-card error" role="alert"><p>{{ error }}</p><button class="primary" @click="loadVocabulary">重新加载</button></div>
+        <div v-else-if="selectedDictionary === 'netem' && error" class="message-card error" role="alert"><p>{{ error }}</p><button class="primary" @click="loadVocabulary">重新加载</button></div>
         <div v-else-if="selectedDictionary === 'cet6' && cetError" class="message-card error" role="alert"><p>{{ cetError }}</p><button class="primary" @click="loadVocabulary">重新加载</button></div>
 
         <template v-else-if="bundle">
-          <HomeDashboard v-if="selectedDictionary === 'netem'" v-show="view === 'home'" :words="bundle.words" :dictionary-version="bundle.contentVersion" :active="view === 'home'" />
-          <section v-else-if="view === 'home'" class="cet-preview" aria-labelledby="cet-preview-title">
-            <div class="eyebrow">CET-6 VOCABULARY</div>
-            <h1 id="cet-preview-title">六级精选词库已载入。</h1>
-            <p>从原表 5278 词中排除 559 个基础或低适用性词，保留 {{ bundle.words.length.toLocaleString('en-US') }} 词。</p>
-            <div class="cet-preview-note">目前可浏览词库。六级独立进度接入后再开放筛查、错词和备份，避免影响你现有的考研记录。</div>
-            <a class="primary" href="#vocabulary">浏览六级词库 →</a>
-          </section>
-          <ScreeningSession v-if="selectedDictionary === 'netem'" v-show="view === 'screening'" :words="bundle.words" :dictionary-version="bundle.contentVersion" :active="view === 'screening'" />
-          <ReviewPanel v-if="selectedDictionary === 'netem'" v-show="view === 'review'" :words="bundle.words" :dictionary-version="bundle.contentVersion" :active="view === 'review'" />
-          <PrintSheet v-if="view === 'print' && selectedDictionary === 'netem'" :words="bundle.words" :dictionary-version="bundle.contentVersion" />
-          <section v-if="selectedDictionary === 'cet6' && ['screening', 'review', 'print'].includes(view)" class="message-card cet-gate">
-            <h2>六级筛查即将开放</h2>
-            <p>六级独立学习记录尚未接入。现在可以先查看完整词库；现有考研进度、错词和备份会保持原样。</p>
-            <a class="primary" href="#vocabulary">浏览六级词库</a>
-            <button type="button" class="secondary" @click="selectDictionary('netem')">返回考研词汇</button>
-          </section>
+          <HomeDashboard :key="activeDictionaryId" v-show="view === 'home'" :words="bundle.words" :dictionary-version="bundle.contentVersion" :dictionary-id="activeDictionaryId" :active="view === 'home'" />
+          <ScreeningSession :key="activeDictionaryId" v-show="view === 'screening'" :words="bundle.words" :dictionary-version="bundle.contentVersion" :dictionary-id="activeDictionaryId" :active="view === 'screening'" />
+          <ReviewPanel :key="activeDictionaryId" v-show="view === 'review'" :words="bundle.words" :dictionary-version="bundle.contentVersion" :dictionary-id="activeDictionaryId" :active="view === 'review'" />
+          <PrintSheet v-if="view === 'print'" :key="activeDictionaryId" :words="bundle.words" :dictionary-version="bundle.contentVersion" :dictionary-id="activeDictionaryId" />
           <div v-show="view === 'vocabulary'">
           <section class="dictionary-card" aria-label="当前词库">
             <div class="dictionary-info">
@@ -198,7 +194,7 @@ onMounted(loadVocabulary)
               <h2>{{ selectedDictionary === 'netem' ? bundle.title : '六级精选词汇' }}<span class="edition">{{ selectedDictionary === 'netem' ? '2024 大纲整理版' : '2016 年修订版来源' }}</span></h2>
               <p>英文单词 + 简短中文释义，保留原始词表的简洁表达。</p>
               <button class="primary" @click="browse">浏览词库 <span aria-hidden="true">↗</span></button>
-              <a v-if="selectedDictionary === 'netem'" class="secondary preview-entry" href="#screening">体验八选一题目 →</a>
+              <a class="secondary preview-entry" href="#screening">体验八选一题目 →</a>
             </div>
             <div class="word-count"><span>已载入词条</span><strong>{{ bundle.words.length.toLocaleString('en-US') }}<small>词</small></strong><span class="count-foot">固定版本 · 本地读取</span></div>
           </section>
@@ -229,7 +225,7 @@ onMounted(loadVocabulary)
             <p>固定快照：<code>{{ bundle.source.commit.slice(0, 12) }}</code>。数据采用 <a :href="licenseUrl" target="_blank" rel="noreferrer">{{ bundle.source.license }}</a> 许可，原始释义保持不变。</p>
             <p>原词库 {{ bundle.report.sourceCount.toLocaleString('en-US') }} 条，已按清单排除 {{ bundle.report.excludedCount ?? 0 }} 个词，当前保留 {{ bundle.words.length.toLocaleString('en-US') }} 条。</p>
             <p v-if="selectedDictionary === 'netem'">全部 5,220 个词均可筛查，正确项和七个干扰项都直接取自原始词表。进度与错词自动保存在当前浏览器，支持错词复筛、导出和打印。</p>
-            <p v-else>六级题库已通过八选一结构检查，选项取自原表；当前阶段只开放词库浏览，筛查和独立记录将在下一阶段接入。</p>
+            <p v-else>全部 4,719 个六级精选词均可筛查，选项取自原表。六级的初筛、错词、复筛、备份和打印记录独立保存在当前设备。</p>
             <ul v-if="bundle.report.issues.length"><li v-for="(item, index) in bundle.report.issues" :key="index">{{ item.word }}：{{ item.message }}</li></ul>
           </div></details>
           </div>

@@ -6,8 +6,9 @@ import { useScreening } from '../domain/useScreening.ts'
 import { questionSignature, type ScreeningSnapshot, type ScreeningStorage } from '../domain/screeningStorage.ts'
 import { readLearningBackup, restoreLearningBackup, screeningBackupFileName, type LearningBackup } from '../domain/studyTools.ts'
 import { shareOrDownloadFile } from '../domain/fileTransfer.ts'
+import type { LearningDictionaryId } from '../domain/learningNamespace.ts'
 
-const props = defineProps<{ words: VocabularyWord[]; dictionaryVersion: string; active: boolean; reviewQuestions?: ScreeningQuestion[]; storage?: ScreeningStorage; initialCount?: number }>()
+const props = defineProps<{ words: VocabularyWord[]; dictionaryVersion: string; dictionaryId: LearningDictionaryId; active: boolean; reviewQuestions?: ScreeningQuestion[]; storage?: ScreeningStorage; initialCount?: number }>()
 const emit = defineEmits<{ back: [] }>()
 const isReview = computed(() => !!props.reviewQuestions)
 const questions = ref<ScreeningQuestion[]>([])
@@ -24,7 +25,7 @@ watch(() => props.words, words => {
   catch { questions.value = []; error.value = '题目与当前词库不匹配，请重新导入词库后刷新。' }
 }, { immediate: true })
 const { question, options, phase, records, latest, wrongWords, submit, storageError, pending, conflict, restore, savePending } = useScreening(
-  questions, () => props.dictionaryVersion, () => props.active && visible.value, props.storage,
+  questions, () => props.dictionaryVersion, () => props.active && visible.value, props.storage, props.dictionaryId,
 )
 const feedback = computed(() => phase.value === 'feedback')
 const saveStatus = computed(() => phase.value === 'loading' ? '正在读取存档…' : phase.value === 'saving' ? '正在保存…' : phase.value === 'error' ? '存档需要处理' : records.value.length ? '进度与错词已保存在本机' : '答题后自动保存到本机')
@@ -52,11 +53,12 @@ async function backupScreening() {
     const backup: LearningBackup = {
       schemaVersion: 1,
       createdAt: new Date().toISOString(),
+      dictionaryId: props.dictionaryId,
       dictionaryVersion: props.dictionaryVersion,
       initial,
       review: null,
     }
-    const result = await shareOrDownloadFile(JSON.stringify(backup, null, 2), screeningBackupFileName(count), 'application/json;charset=utf-8', '拾词当前筛查备份')
+    const result = await shareOrDownloadFile(JSON.stringify(backup, null, 2), screeningBackupFileName(count, new Date(), props.dictionaryId), 'application/json;charset=utf-8', '拾词当前筛查备份')
     const saved = result === 'shared' ? '已通过系统分享处理' : result === 'downloaded' ? '已下载' : '已取消分享'
     actionMessage.value = saved + ' ' + count + ' 个已筛词。可以继续筛选，或重置后开始新一轮。'
   } catch (cause) {
@@ -70,12 +72,12 @@ async function resetScreening() {
   actionBusy.value = true
   actionMessage.value = ''
   try {
-    const current = await readLearningBackup(indexedDB, props.dictionaryVersion)
+    const current = await readLearningBackup(indexedDB, props.dictionaryVersion, props.dictionaryId)
     const count = current.initial?.records.length ?? 0
     if (!count) { actionMessage.value = '当前没有需要重置的筛查记录。'; return }
     if (!window.confirm(`重置会清空当前已筛选的 ${count} 个词及复筛记录。需要保留时请先备份。确定重新开始吗？`)) return
-    const empty: LearningBackup = { schemaVersion: 1, createdAt: new Date().toISOString(), dictionaryVersion: props.dictionaryVersion, initial: null, review: null }
-    await restoreLearningBackup(empty, indexedDB, current)
+    const empty: LearningBackup = { schemaVersion: 1, createdAt: new Date().toISOString(), dictionaryId: props.dictionaryId, dictionaryVersion: props.dictionaryVersion, initial: null, review: null }
+    await restoreLearningBackup(empty, indexedDB, current, props.dictionaryId)
     window.location.reload()
   } catch (cause) {
     actionMessage.value = cause instanceof Error ? cause.message : '重置失败，当前记录没有改变。'

@@ -1,5 +1,6 @@
 import type { ScreeningQuestion } from './questions.ts'
 import { createRevisionStorage, questionSignature, StorageConflict, validateSnapshot, type RevisionStorage, type ScreeningSnapshot, type ScreeningStorage } from './screeningStorage.ts'
+import { learningKeys, type LearningDictionaryId } from './learningNamespace.ts'
 
 export interface ReviewRound { wordIds: string[]; snapshot: ScreeningSnapshot }
 export interface ReviewHistory {
@@ -8,8 +9,11 @@ export interface ReviewHistory {
   revision: number
   rounds: ReviewRound[]
 }
-export const createReviewStorage = (factory: IDBFactory = indexedDB, databaseName = 'shici-learning') =>
-  createRevisionStorage<ReviewHistory>('review-history', factory, databaseName, (a, b) => a.initialTaskId === b.initialTaskId)
+export const createReviewStorage = (factory: IDBFactory = indexedDB, databaseName = 'shici-learning', dictionaryId: LearningDictionaryId = 'netem-2024') => {
+  const keys = learningKeys(dictionaryId)
+  return createRevisionStorage<ReviewHistory>(keys.review, factory, databaseName, (a, b) => a.initialTaskId === b.initialTaskId,
+    (previous, next) => previous.revision === next.revision, keys.generation)
+}
 
 export function reviewWords(initial: ScreeningSnapshot, history: ReviewHistory) {
   const words = new Map(initial.records.filter(r => r.result === 'wrong').map(r => [r.wordId, { ...r, needsReview: true }]))

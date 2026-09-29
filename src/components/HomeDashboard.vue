@@ -3,8 +3,9 @@ import { ref, watch } from 'vue'
 import type { VocabularyWord } from '../domain/types.ts'
 import { buildSampleQuestions } from '../domain/questions.ts'
 import { historicalWrongWords, readLearningBackup, validateLearningBackup } from '../domain/studyTools.ts'
+import type { LearningDictionaryId } from '../domain/learningNamespace.ts'
 
-const props = defineProps<{ words: VocabularyWord[]; dictionaryVersion: string; active: boolean }>()
+const props = defineProps<{ words: VocabularyWord[]; dictionaryVersion: string; dictionaryId: LearningDictionaryId; active: boolean }>()
 const answeredCount = ref(0)
 const wrongCount = ref(0)
 const loading = ref(false)
@@ -17,9 +18,10 @@ async function loadSummary() {
   try {
     const questions = buildSampleQuestions(props.words, () => 0.999999, false)
     const backup = validateLearningBackup(
-      await readLearningBackup(indexedDB, props.dictionaryVersion),
+      await readLearningBackup(indexedDB, props.dictionaryVersion, props.dictionaryId),
       props.dictionaryVersion,
       questions,
+      props.dictionaryId,
     )
     answeredCount.value = backup.initial?.records.length ?? 0
     wrongCount.value = historicalWrongWords(backup).length

@@ -2,6 +2,7 @@ import { computed, onScopeDispose, ref, watch, type Ref } from 'vue'
 import type { AnswerRecord } from './types.ts'
 import { shuffleOptions, type ScreeningQuestion } from './questions.ts'
 import { createIndexedDBStorage, loadValidatedSnapshot, questionSignature, StorageConflict, type ScreeningSnapshot, type ScreeningStorage } from './screeningStorage.ts'
+import type { LearningDictionaryId } from './learningNamespace.ts'
 
 export interface SubmittedAnswer extends AnswerRecord {
   spelling: string
@@ -9,7 +10,7 @@ export interface SubmittedAnswer extends AnswerRecord {
   selectedMeaning: string
 }
 
-export function useScreening(questions: Ref<ScreeningQuestion[]>, dictionaryVersion: () => string, active: () => boolean, storage?: ScreeningStorage) {
+export function useScreening(questions: Ref<ScreeningQuestion[]>, dictionaryVersion: () => string, active: () => boolean, storage?: ScreeningStorage, dictionaryId: LearningDictionaryId = 'netem-2024') {
   const phase = ref<'loading' | 'ready' | 'saving' | 'feedback' | 'completed' | 'error'>('loading')
   const records = ref<SubmittedAnswer[]>([])
   const currentWordId = ref<string | null>(null)
@@ -38,7 +39,7 @@ export function useScreening(questions: Ref<ScreeningQuestion[]>, dictionaryVers
     phase.value = 'loading'
     storageError.value = ''
     try {
-      repository ??= createIndexedDBStorage()
+      repository ??= createIndexedDBStorage(indexedDB, 'shici-learning', dictionaryId)
       const snapshot = await loadValidatedSnapshot(repository, version, questions.value)
       if (disposed) return
       if (snapshot) { records.value = snapshot.records; taskId = snapshot.taskId; revision = snapshot.revision }

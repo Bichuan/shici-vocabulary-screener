@@ -7,8 +7,9 @@ import { activeRound, beginReview, createReviewStorage, loadValidatedReviewHisto
 import { backupFileName, createMemorizationCsv, csvFileName, historicalWrongWords, readLearningBackup, restoreLearningBackup, validateLearningBackup, type LearningBackup } from '../domain/studyTools.ts'
 import { shareOrDownloadFile, type FileTransferResult } from '../domain/fileTransfer.ts'
 import ScreeningSession from './ScreeningSession.vue'
+import type { LearningDictionaryId } from '../domain/learningNamespace.ts'
 
-const props = defineProps<{ words: VocabularyWord[]; dictionaryVersion: string; active: boolean }>()
+const props = defineProps<{ words: VocabularyWord[]; dictionaryVersion: string; dictionaryId: LearningDictionaryId; active: boolean }>()
 const initial = ref<ScreeningSnapshot | null>(null)
 const history = ref<ReviewHistory | null>(null)
 const questions = shallowRef<ScreeningQuestion[]>([])
@@ -41,8 +42,8 @@ async function load() {
   loading.value = true; error.value = ''
   try {
     questions.value = buildSampleQuestions(props.words)
-    initial.value = await loadValidatedSnapshot(createIndexedDBStorage(), props.dictionaryVersion, questions.value)
-    disk = createReviewStorage()
+    initial.value = await loadValidatedSnapshot(createIndexedDBStorage(indexedDB, 'shici-learning', props.dictionaryId), props.dictionaryVersion, questions.value)
+    disk = createReviewStorage(indexedDB, 'shici-learning', props.dictionaryId)
     history.value = initial.value ? await loadValidatedReviewHistory(disk, initial.value, questions.value) : null
   } catch (cause) { error.value = cause instanceof Error ? cause.message : '无法读取错词存档，请重试。' }
   finally {
@@ -80,7 +81,7 @@ async function exportCsv() {
   if (!list.length) { toolMessage.value = '暂无历史错词可导出。'; return }
   toolBusy.value = true; toolMessage.value = ''
   try {
-    const result = await shareOrDownloadFile(createMemorizationCsv(list), csvFileName(), 'text/csv;charset=utf-8', '拾词错词背诵表')
+    const result = await shareOrDownloadFile(createMemorizationCsv(list), csvFileName(new Date(), props.dictionaryId), 'text/csv;charset=utf-8', '拾词错词背诵表')
     toolMessage.value = transferMessage(result, list.length + ' 个历史错词')
   } catch (cause) { toolMessage.value = cause instanceof Error ? cause.message : '导出失败，请重试。' }
   finally { toolBusy.value = false }
@@ -92,11 +93,12 @@ async function backup() {
     const archive = validateLearningBackup({
       schemaVersion: 1,
       createdAt: new Date().toISOString(),
+      dictionaryId: props.dictionaryId,
       dictionaryVersion: props.dictionaryVersion,
       initial: initial.value ? JSON.parse(JSON.stringify(initial.value)) : null,
       review: history.value?.revision ? JSON.parse(JSON.stringify(history.value)) : null,
-    }, props.dictionaryVersion, questions.value)
-    const result = await shareOrDownloadFile(JSON.stringify(archive, null, 2), backupFileName(), 'application/json;charset=utf-8', '拾词完整学习备份')
+    }, props.dictionaryVersion, questions.value, props.dictionaryId)
+    const result = await shareOrDownloadFile(JSON.stringify(archive, null, 2), backupFileName(new Date(), props.dictionaryId), 'application/json;charset=utf-8', '拾词完整学习备份')
     toolMessage.value = transferMessage(result, '完整学习备份')
   } catch (cause) { toolMessage.value = cause instanceof Error ? cause.message : '备份失败，请重试。' }
   finally { toolBusy.value = false }
@@ -109,8 +111,8 @@ async function selectRestore(event: Event) {
   if (!file) return
   if (file.size > MAX_BACKUP_FILE_SIZE) { toolMessage.value = '备份文件超过 10 MB，未恢复。'; input.value = ''; return }
   try {
-    const checked = validateLearningBackup(JSON.parse(await file.text()), props.dictionaryVersion, questions.value)
-    const expected = await readLearningBackup(undefined, props.dictionaryVersion)
+    const checked = validateLearningBackup(JSON.parse(await file.text()), props.dictionaryVersion, questions.value, props.dictionaryId)
+    const expected = await readLearningBackup(undefined, props.dictionaryVersion, props.dictionaryId)
     restorePreview.value = {
       fileName: file.name,
       backup: checked,
@@ -128,7 +130,7 @@ async function confirmRestore() {
   if (!preview || toolBusy.value) return
   toolBusy.value = true
   try {
-    await restoreLearningBackup(preview.backup, undefined, preview.expected)
+    await restoreLearningBackup(preview.backup, undefined, preview.expected, props.dictionaryId)
     restorePreview.value = null
     window.location.reload()
   } catch (cause) {
@@ -143,7 +145,7 @@ function cancelRestore() {
 </script>
 
 <template>
-  <ScreeningSession v-if="session" :key="session.id" :words="props.words" :dictionary-version="dictionaryVersion" :active="active" :review-questions="session.questions" :storage="session.storage" :initial-count="initial?.records.length" @back="back" />
+  <ScreeningSession v-if="session" :key="session.id" :words="props.words" :dictionary-version="dictionaryVersion" :dictionary-id="dictionaryId" :active="active" :review-questions="session.questions" :storage="session.storage" :initial-count="initial?.records.length" @back="back" />
   <section v-else class="screening-preview" aria-label="错词与复筛">
     <div class="screening-heading"><div><div class="eyebrow">WORDS TO REVISIT</div><h1>把还没记住的词，再筛一遍。</h1></div></div>
     <p class="preview-note">答对后移出待复筛列表，历史错词始终保留。</p>

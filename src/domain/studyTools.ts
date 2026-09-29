@@ -1,15 +1,16 @@
 import type { ScreeningQuestion } from './questions.ts'
 import { reviewWords, validateReviewHistory, type ReviewHistory } from './review.ts'
 import { StorageConflict, validateSnapshot, type ScreeningSnapshot } from './screeningStorage.ts'
+import { dictionaryLabel, learningKeys, type LearningDictionaryId } from './learningNamespace.ts'
 
 const databaseName = 'shici-learning'
 const storeName = 'sessions'
-const initialKey = 'initial-screening'
-const reviewKey = 'review-history'
 
 export interface LearningBackup {
   schemaVersion: 1
   createdAt: string
+  /** Legacy NETEM exports omit this field; all new exports include it. */
+  dictionaryId?: LearningDictionaryId
   dictionaryVersion: string
   initial: ScreeningSnapshot | null
   review: ReviewHistory | null
@@ -29,47 +30,56 @@ function openDatabase(factory: IDBFactory = indexedDB): Promise<IDBDatabase> {
   })
 }
 
-export async function readLearningBackup(factory: IDBFactory = indexedDB, dictionaryVersion = ''): Promise<LearningBackup> {
+export async function readLearningBackup(factory: IDBFactory = indexedDB, dictionaryVersion = '', dictionaryId: LearningDictionaryId = 'netem-2024'): Promise<LearningBackup> {
+  const keys = learningKeys(dictionaryId)
   const db = await openDatabase(factory)
   return new Promise((resolve, reject) => {
     const transaction = db.transaction(storeName, 'readonly')
     const store = transaction.objectStore(storeName)
-    const initial = store.get(initialKey)
-    const review = store.get(reviewKey)
+    const initial = store.get(keys.initial)
+    const review = store.get(keys.review)
     transaction.oncomplete = () => {
       db.close()
-      resolve({ schemaVersion: 1, createdAt: new Date().toISOString(), dictionaryVersion: initial.result?.dictionaryVersion ?? dictionaryVersion, initial: initial.result ?? null, review: review.result ?? null })
+      resolve({ schemaVersion: 1, createdAt: new Date().toISOString(), dictionaryId, dictionaryVersion: initial.result?.dictionaryVersion ?? dictionaryVersion, initial: initial.result ?? null, review: review.result ?? null })
     }
     transaction.onabort = () => { db.close(); reject(transaction.error ?? new Error('读取学习记录失败。')) }
   })
 }
 
-export async function restoreLearningBackup(backup: LearningBackup, factory: IDBFactory = indexedDB, expected?: LearningBackup): Promise<void> {
+export async function restoreLearningBackup(backup: LearningBackup, factory: IDBFactory = indexedDB, expected?: LearningBackup, dictionaryId: LearningDictionaryId = 'netem-2024'): Promise<void> {
+  const keys = learningKeys(dictionaryId)
+  if ((backup.dictionaryId ?? 'netem-2024') !== dictionaryId || (expected && (expected.dictionaryId ?? 'netem-2024') !== dictionaryId)) {
+    throw new Error('备份属于其他词库，现有学习记录未更改。')
+  }
   const db = await openDatabase(factory)
   return new Promise((resolve, reject) => {
     const transaction = db.transaction(storeName, 'readwrite')
     const store = transaction.objectStore(storeName)
-    const initial = store.get(initialKey)
-    const review = store.get(reviewKey)
+    const initial = store.get(keys.initial)
+    const review = store.get(keys.review)
     let conflict = false
     review.onsuccess = () => {
       if (expected && (JSON.stringify(initial.result ?? null) !== JSON.stringify(expected.initial) || JSON.stringify(review.result ?? null) !== JSON.stringify(expected.review))) {
         conflict = true; transaction.abort(); return
       }
       // Retain the previous state and invalidate repositories in already-open tabs.
-      store.put({ initial: initial.result ?? null, review: review.result ?? null }, 'before-restore')
-      store.put(crypto.randomUUID(), 'storage-generation')
-      if (backup.initial) store.put(backup.initial, initialKey); else store.delete(initialKey)
-      if (backup.review) store.put(backup.review, reviewKey); else store.delete(reviewKey)
+      store.put({ initial: initial.result ?? null, review: review.result ?? null }, keys.beforeRestore)
+      store.put(crypto.randomUUID(), keys.generation)
+      if (backup.initial) store.put(backup.initial, keys.initial); else store.delete(keys.initial)
+      if (backup.review) store.put(backup.review, keys.review); else store.delete(keys.review)
     }
     transaction.oncomplete = () => { db.close(); resolve() }
     transaction.onabort = () => { db.close(); reject(conflict ? new StorageConflict() : transaction.error ?? new Error('恢复备份失败，现有记录未更改。')) }
   })
 }
 
-export function validateLearningBackup(value: unknown, dictionaryVersion: string, questions: ScreeningQuestion[]): LearningBackup {
+export function validateLearningBackup(value: unknown, dictionaryVersion: string, questions: ScreeningQuestion[], dictionaryId: LearningDictionaryId = 'netem-2024'): LearningBackup {
+  learningKeys(dictionaryId)
   const backup = value as LearningBackup
   const invalid = () => { throw new Error('备份文件格式不正确，现有学习记录未更改。') }
+  if (backup && typeof backup === 'object' && (backup.dictionaryId ?? 'netem-2024') !== dictionaryId) {
+    throw new Error('备份属于其他词库，现有学习记录未更改。')
+  }
   if (!backup || typeof backup !== 'object' || backup.schemaVersion !== 1 || typeof backup.createdAt !== 'string' ||
     !Number.isFinite(Date.parse(backup.createdAt)) || backup.dictionaryVersion !== dictionaryVersion ||
     !('initial' in backup) || !('review' in backup)) invalid()
@@ -78,7 +88,7 @@ export function validateLearningBackup(value: unknown, dictionaryVersion: string
   // Missing review history must stay null; an empty history otherwise incorrectly
   // implies that initial screening has been completed on the next validation.
   const review = initial && backup.review !== null ? validateReviewHistory(backup.review, initial, questions) : null
-  return { schemaVersion: 1, createdAt: backup.createdAt, dictionaryVersion, initial, review }
+  return { schemaVersion: 1, createdAt: backup.createdAt, dictionaryId, dictionaryVersion, initial, review }
 }
 
 function csvCell(value: string) {
@@ -89,15 +99,15 @@ export function createMemorizationCsv(words: readonly MemorizationWord[]): strin
   const lines = [['序号', '英文单词', '正确核心义'], ...words.map((word, index) => [String(index + 1), word.spelling, word.coreMeaning])]
   return `\uFEFF${lines.map(row => row.map(csvCell).join(',')).join('\r\n')}\r\n`
 }
-export function backupFileName(date = new Date()) {
-  return `拾词-学习备份-${date.toISOString().slice(0, 10)}.json`
+export function backupFileName(date = new Date(), dictionaryId?: LearningDictionaryId) {
+  return `拾词-${dictionaryId ? dictionaryLabel(dictionaryId) + '-' : ''}学习备份-${date.toISOString().slice(0, 10)}.json`
 }
-export function screeningBackupFileName(answeredCount: number, date = new Date()) {
+export function screeningBackupFileName(answeredCount: number, date = new Date(), dictionaryId?: LearningDictionaryId) {
   const stamp = date.toISOString().slice(0, 16).replace('T', '-').replace(':', '')
-  return `拾词-筛查备份-${answeredCount}词-${stamp}.json`
+  return `拾词-${dictionaryId ? dictionaryLabel(dictionaryId) + '-' : ''}筛查备份-${answeredCount}词-${stamp}.json`
 }
-export function csvFileName(date = new Date()) {
-  return `拾词-错词背诵-${date.toISOString().slice(0, 10)}.csv`
+export function csvFileName(date = new Date(), dictionaryId?: LearningDictionaryId) {
+  return `拾词-${dictionaryId ? dictionaryLabel(dictionaryId) + '-' : ''}错词背诵-${date.toISOString().slice(0, 10)}.csv`
 }
 export function historicalWrongWords(backup: LearningBackup): MemorizationWord[] {
   if (!backup.initial) return []

@@ -1,5 +1,6 @@
 import type { SubmittedAnswer } from './useScreening.ts'
 import { LEGACY_SAMPLE_VERSION, PREVIOUS_QUESTION_VERSIONS, type ScreeningQuestion } from './questions.ts'
+import { learningKeys, type LearningDictionaryId } from './learningNamespace.ts'
 
 export interface ScreeningSnapshot {
   schemaVersion: 1
@@ -122,6 +123,7 @@ export function createRevisionStorage<T extends { revision: number }>(
   databaseName = 'shici-learning',
   compatible: (previous: T, next: T) => boolean = () => true,
   migrationCompatible: (previous: T, next: T) => boolean = (previous, next) => previous.revision === next.revision,
+  generationKey = 'storage-generation',
 ): RevisionStorage<T> {
   let generation: string | null | undefined
   async function open(): Promise<IDBDatabase> {
@@ -144,7 +146,7 @@ export function createRevisionStorage<T extends { revision: number }>(
       return new Promise((resolve, reject) => {
         const tx = db.transaction('sessions', 'readonly')
         const request = tx.objectStore('sessions').get(key)
-        const epoch = tx.objectStore('sessions').get('storage-generation')
+        const epoch = tx.objectStore('sessions').get(generationKey)
         tx.oncomplete = () => { generation = epoch.result ?? null; db.close(); resolve(request.result) }
         tx.onabort = () => { db.close(); reject(tx.error ?? new Error('读取存档失败')) }
       })
@@ -155,7 +157,7 @@ export function createRevisionStorage<T extends { revision: number }>(
         const tx = db.transaction('sessions', 'readwrite')
         const store = tx.objectStore('sessions')
         const request = store.get(key)
-        const epoch = store.get('storage-generation')
+        const epoch = store.get(generationKey)
         let conflict = false
         epoch.onsuccess = () => {
           const previous = request.result as T | undefined
@@ -176,7 +178,7 @@ export function createRevisionStorage<T extends { revision: number }>(
         const tx = db.transaction('sessions', 'readwrite')
         const store = tx.objectStore('sessions')
         const request = store.get(key)
-        const epoch = store.get('storage-generation')
+        const epoch = store.get(generationKey)
         let conflict = false
         epoch.onsuccess = () => {
           const current = request.result as T | undefined
@@ -198,8 +200,9 @@ export function createRevisionStorage<T extends { revision: number }>(
   }
 }
 
-export function createIndexedDBStorage(factory: IDBFactory = indexedDB, databaseName = 'shici-learning'): ScreeningStorage {
-  return createRevisionStorage<ScreeningSnapshot>('initial-screening', factory, databaseName, (a, b) => {
+export function createIndexedDBStorage(factory: IDBFactory = indexedDB, databaseName = 'shici-learning', dictionaryId: LearningDictionaryId = 'netem-2024'): ScreeningStorage {
+  const keys = learningKeys(dictionaryId)
+  return createRevisionStorage<ScreeningSnapshot>(keys.initial, factory, databaseName, (a, b) => {
     if (a.taskId !== b.taskId || a.dictionaryVersion !== b.dictionaryVersion) return false
     if (a.questionSignature === b.questionSignature) return true
     return isPreviousSnapshot(a) && b.records.length === a.records.length + 1 && a.records.every((record, index) => {
@@ -210,5 +213,5 @@ export function createIndexedDBStorage(factory: IDBFactory = indexedDB, database
     a.revision === b.revision && a.records.length === b.records.length && a.records.every((record, index) => {
       const next = b.records[index]
       return next?.id === record.id && next.wordId === record.wordId && next.result === record.result && next.answeredAt === record.answeredAt
-    }))
+    }), keys.generation)
 }
