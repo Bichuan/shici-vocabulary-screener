@@ -17,10 +17,10 @@ test('主程序加载失败仍可刷新恢复，刷新保留学习进度', async
   await answer(page, 0)
   await page.route('**/assets/*.js', route => route.abort())
   await page.reload()
-  await expect(page.getByRole('button', { name: '刷新 / 检查更新' })).toBeVisible()
-  await expect(page.locator('#startup-status')).toContainText('页面未能启动', { timeout: 15000 })
+  await expect(page.getByRole('button', { name: '修复打开' })).toBeVisible({ timeout: 15000 })
+  await expect(page.locator('#startup-status')).toContainText('程序文件未能加载')
   await page.unroute('**/assets/*.js')
-  await page.getByRole('button', { name: '刷新 / 检查更新' }).click()
+  await page.getByRole('button', { name: '修复打开' }).click()
   await expect(page.locator('.screening-progress')).toContainText('已筛选 1 / 48 词')
 })
 async function useTestVocabulary(page: Page, selectedBundle = bundle) {
@@ -160,6 +160,30 @@ test('首次联网缓存后可离线打开首页、词库、筛查与复筛', as
     await context.setOffline(false)
   }
   expect(errors).toEqual([])
+})
+
+test('离线程序文件缺失后修复打开，筛查记录仍在', async ({ page, context }) => {
+  await page.goto('/#screening')
+  await page.evaluate(async () => { await navigator.serviceWorker.ready })
+  await page.reload()
+  await expect.poll(() => page.evaluate(() => !!navigator.serviceWorker.controller)).toBe(true)
+  await expect(card(page).locator('.answer-option')).toHaveCount(8)
+  await card(page).locator('.answer-option').first().click()
+  await expect(page.locator('.screening-progress')).toContainText('已筛选 1 / 5220 词')
+
+  await page.evaluate(async () => {
+    const names = (await caches.keys()).filter(name => name.startsWith('shici-offline-'))
+    const cache = await caches.open(names.at(-1)!)
+    const assets = await cache.keys()
+    const script = assets.find(request => /\/assets\/index-[^/]+\.js$/.test(new URL(request.url).pathname))
+    if (!script || !(await cache.delete(script))) throw new Error('无法建立程序文件缺失的测试场景')
+  })
+  await context.setOffline(true)
+  await page.reload()
+  await expect(page.getByRole('button', { name: '修复打开' })).toBeVisible({ timeout: 15000 })
+  await context.setOffline(false)
+  await page.getByRole('button', { name: '修复打开' }).click()
+  await expect(page.locator('.screening-progress')).toContainText('已筛选 1 / 5220 词')
 })
 
 })

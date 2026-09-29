@@ -27,24 +27,48 @@
         var status = document.getElementById('startup-status');
         var mounted = false;
         var retryOnly = false;
+        function within(promise, milliseconds) {
+          return Promise.race([promise, new Promise(function (_, reject) {
+            setTimeout(function () { reject(new Error('timeout')); }, milliseconds);
+          })]);
+        }
         window.addEventListener('shici-ready', function () {
           mounted = true;
           status.textContent = '';
         });
         setTimeout(function () {
-          if (!mounted) status.textContent = '页面未能启动，请联网后点击刷新。筛查记录不会被清除。';
+          if (!mounted) {
+            status.textContent = '程序文件未能加载，点击修复打开。学习记录不会被清除。';
+            button.textContent = '修复打开';
+          }
         }, 12000);
         button.addEventListener('click', async function () {
           if (retryOnly) { location.reload(); return; }
           button.disabled = true;
+          if (!mounted) {
+            status.textContent = '正在修复程序文件…';
+            try {
+              // Unregistering an unusable worker leaves IndexedDB and localStorage intact.
+              if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+                var stale = await within(navigator.serviceWorker.getRegistration(location.href), 8000);
+                if (stale) await within(stale.unregister(), 8000);
+              }
+              var fresh = new URL(location.href);
+              fresh.searchParams.set('repair', String(Date.now()));
+              location.replace(fresh.href);
+            } catch (_) {
+              status.textContent = '修复未完成，请稍后重试。学习记录仍保存在本机。';
+              button.textContent = '重试修复';
+              button.disabled = false;
+            }
+            return;
+          }
           status.textContent = '正在检查更新…';
           try {
             if ('serviceWorker' in navigator && location.protocol !== 'file:') {
               var registration = await navigator.serviceWorker.getRegistration(location.href);
               if (registration) {
-                await Promise.race([registration.update(), new Promise(function (_, reject) {
-                  setTimeout(function () { reject(new Error('timeout')); }, 8000);
-                })]);
+                await within(registration.update(), 20000);
                 var worker = registration.installing || registration.waiting;
                 if (worker) {
                   await new Promise(function (resolve, reject) {

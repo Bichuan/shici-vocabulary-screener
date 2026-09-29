@@ -30,7 +30,9 @@ const OFFLINE_ENTRY = new URL('index.html', self.registration.scope).href;
 
 self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(PRECACHE_URLS))
+    caches.open(CACHE_NAME)
+      .then(cache => cache.addAll(PRECACHE_URLS))
+      .then(() => self.skipWaiting())
   );
 });
 
@@ -49,10 +51,21 @@ self.addEventListener('fetch', event => {
     const cache = await caches.open(CACHE_NAME);
     if (request.mode === 'navigate') {
       const entry = await cache.match(OFFLINE_ENTRY);
+      try {
+        const response = await fetch(request, { cache: 'no-store' });
+        if (response.ok) return response;
+      } catch { /* Use the complete offline version when the network fails. */ }
       return entry || fetch(request);
     }
     const cached = await cache.match(request, { ignoreSearch: true, ignoreVary: true });
-    return cached || fetch(request);
+    if (cached) return cached;
+    // An older open page may still request its own hashed asset after an update.
+    for (const name of await caches.keys()) {
+      if (!name.startsWith(CACHE_PREFIX) || name === CACHE_NAME) continue;
+      const oldAsset = await (await caches.open(name)).match(request, { ignoreSearch: true, ignoreVary: true });
+      if (oldAsset) return oldAsset;
+    }
+    return fetch(request);
   })());
 });
 `

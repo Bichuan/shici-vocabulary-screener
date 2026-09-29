@@ -8,7 +8,7 @@ describe('PWA 离线版本', () => {
     { path: 'data/vocabulary.json', content: new TextEncoder().encode('{"words":[]}') },
   ]
 
-  it('完整预缓存页面、程序和词库，并保留安全的等待更新流程', () => {
+  it('完整预缓存页面、程序和词库，缓存完成后启用新版', () => {
     const generated = createServiceWorker(files)
     expect(generated.precacheUrls).toEqual([
       './assets/app-123.js',
@@ -16,7 +16,10 @@ describe('PWA 离线版本', () => {
       './index.html',
     ])
     expect(generated.source).toContain('cache.addAll(PRECACHE_URLS)')
+    expect(generated.source).toContain('.then(() => self.skipWaiting())')
     expect(generated.source).toContain("request.mode === 'navigate'")
+    expect(generated.source).toContain("fetch(request, { cache: 'no-store' })")
+    expect(generated.source).toContain("name.startsWith(CACHE_PREFIX)")
     expect(generated.source).toContain("event.data?.type === 'ACTIVATE_UPDATE'")
     expect(generated.source).not.toContain('clients.claim')
   })
