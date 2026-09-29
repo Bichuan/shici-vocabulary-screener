@@ -13,6 +13,34 @@ const questions = buildSampleQuestions(bundle.words, () => 0.999999, true)
 const cetBundle = JSON.parse(readFileSync('public/data/cet-vocabulary.json', 'utf8')) as VocabularyBundle
 const cetQuestions = buildSampleQuestions(cetBundle.words, () => 0.999999, true)
 const card = (page: Page) => page.locator('.question-card:visible')
+
+test('首页重新开始需确认，取消保留记录，确认后只清空当前词库', async ({ page }) => {
+  await useTestVocabulary(page)
+  await page.goto('/#screening')
+  await answer(page, 0, false)
+  await page.getByRole('button', { name: '六级词汇' }).click()
+  await page.goto('/#screening')
+  await answerCet(page, 0)
+  await page.goto('/')
+  await expect(page.locator('.home-progress-card')).toContainText('1 / 4,719 词')
+
+  const cancelDialog = page.waitForEvent('dialog')
+  const cancelClick = page.getByRole('button', { name: /重新开始/ }).click()
+  const cancel = await cancelDialog
+  expect(cancel.message()).toContain('确定重新开始六级筛查吗')
+  await cancel.dismiss()
+  await cancelClick
+  await expect(page.locator('.home-progress-card')).toContainText('1 / 4,719 词')
+
+  const confirmDialog = page.waitForEvent('dialog')
+  const confirmClick = page.getByRole('button', { name: /重新开始/ }).click()
+  await (await confirmDialog).accept()
+  await confirmClick
+  await expect(page.locator('.screening-progress')).toContainText('已筛选 0 / 4719 词')
+  await page.getByRole('button', { name: '考研词汇' }).click()
+  await page.goto('/#screening')
+  await expect(page.locator('.screening-progress')).toContainText('已筛选 1 / 48 词')
+})
 test('两套词库可独立筛查并在切换、刷新后恢复各自进度', async ({ page }) => {
   await useTestVocabulary(page)
   await page.goto('/#screening')
@@ -291,7 +319,7 @@ test('iPhone 首页显示进度、四个入口和安全区底部导航', async (
     await page.setViewportSize({ width, height: 844 })
     await page.goto('/')
     await expect(page.getByRole('heading', { name: '从这里继续筛查。' })).toBeVisible()
-    await expect(page.locator('.home-actions a')).toHaveCount(4)
+    await expect(page.locator('.home-actions > *')).toHaveCount(4)
     await expect(page.locator('.home-progress-card strong')).toContainText('0 / 48 词')
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
   }

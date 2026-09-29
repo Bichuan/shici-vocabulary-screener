@@ -2,14 +2,42 @@
 import { ref, watch } from 'vue'
 import type { VocabularyWord } from '../domain/types.ts'
 import { buildSampleQuestions } from '../domain/questions.ts'
-import { historicalWrongWords, readLearningBackup, validateLearningBackup } from '../domain/studyTools.ts'
-import type { LearningDictionaryId } from '../domain/learningNamespace.ts'
+import { historicalWrongWords, readLearningBackup, restoreLearningBackup, validateLearningBackup, type LearningBackup } from '../domain/studyTools.ts'
+import { dictionaryLabel, type LearningDictionaryId } from '../domain/learningNamespace.ts'
 
 const props = defineProps<{ words: VocabularyWord[]; dictionaryVersion: string; dictionaryId: LearningDictionaryId; active: boolean }>()
 const answeredCount = ref(0)
 const wrongCount = ref(0)
 const loading = ref(false)
+const restarting = ref(false)
 const error = ref('')
+const restartMessage = ref('')
+
+async function restartScreening() {
+  if (loading.value || restarting.value) return
+  restarting.value = true
+  restartMessage.value = ''
+  try {
+    const current = await readLearningBackup(indexedDB, props.dictionaryVersion, props.dictionaryId)
+    const count = current.initial?.records.length ?? 0
+    if (!count) {
+      window.location.hash = '#screening'
+      return
+    }
+    if (!window.confirm(`确定重新开始${dictionaryLabel(props.dictionaryId)}筛查吗？这会清空当前已筛选的 ${count} 个词及复筛记录。需要保留时请先备份。`)) return
+    const empty: LearningBackup = {
+      schemaVersion: 1, createdAt: new Date().toISOString(), dictionaryId: props.dictionaryId,
+      dictionaryVersion: props.dictionaryVersion, initial: null, review: null,
+    }
+    await restoreLearningBackup(empty, indexedDB, current, props.dictionaryId)
+    window.location.hash = '#screening'
+    window.location.reload()
+  } catch (cause) {
+    restartMessage.value = cause instanceof Error ? cause.message : '重新开始失败，现有记录没有改变。'
+  } finally {
+    restarting.value = false
+  }
+}
 
 async function loadSummary() {
   if (!props.active || loading.value) return
@@ -78,12 +106,13 @@ watch(() => props.active, active => { if (active) void loadSummary() }, { immedi
         <span><strong>备份与恢复</strong><small>导出或导入本机记录</small></span>
         <span class="home-action-arrow" aria-hidden="true">→</span>
       </a>
-      <a class="home-action home-action-danger" href="#screening-tools">
+      <button type="button" class="home-action home-action-danger" :disabled="loading || restarting" @click="restartScreening">
         <span class="home-action-icon" aria-hidden="true">↺</span>
-        <span><strong>重新开始</strong><small>{{ answeredCount ? `管理当前 ${answeredCount} 条记录` : '当前没有筛查记录' }}</small></span>
+        <span><strong>{{ restarting ? '正在处理…' : '重新开始' }}</strong><small>{{ answeredCount ? `清空当前 ${answeredCount} 条记录` : '当前没有筛查记录' }}</small></span>
         <span class="home-action-arrow" aria-hidden="true">→</span>
-      </a>
+      </button>
     </nav>
+    <p v-if="restartMessage" class="home-error" role="alert">{{ restartMessage }}</p>
 
     <a class="home-vocabulary-link" href="#vocabulary">查看完整词库与数据来源 <span aria-hidden="true">→</span></a>
     <details class="install-guide" @toggle="revealInstallGuide">
