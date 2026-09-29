@@ -16,6 +16,7 @@ export interface LearningBackup {
   review: ReviewHistory | null
 }
 export interface MemorizationWord { spelling: string; coreMeaning: string }
+export type MemorizationScope = 'history' | 'pending'
 
 function openDatabase(factory: IDBFactory = indexedDB): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
@@ -106,11 +107,16 @@ export function screeningBackupFileName(answeredCount: number, date = new Date()
   const stamp = date.toISOString().slice(0, 16).replace('T', '-').replace(':', '')
   return `拾词-${dictionaryId ? dictionaryLabel(dictionaryId) + '-' : ''}筛查备份-${answeredCount}词-${stamp}.json`
 }
-export function csvFileName(date = new Date(), dictionaryId?: LearningDictionaryId) {
-  return `拾词-${dictionaryId ? dictionaryLabel(dictionaryId) + '-' : ''}错词背诵-${date.toISOString().slice(0, 10)}.csv`
+export function csvFileName(date = new Date(), dictionaryId?: LearningDictionaryId, scope: MemorizationScope = 'history') {
+  return `拾词-${dictionaryId ? dictionaryLabel(dictionaryId) + '-' : ''}${scope === 'pending' ? '当前仍不会' : '错词背诵'}-${date.toISOString().slice(0, 10)}.csv`
 }
-export function historicalWrongWords(backup: LearningBackup): MemorizationWord[] {
+export function memorizationWords(backup: LearningBackup, scope: MemorizationScope): MemorizationWord[] {
   if (!backup.initial) return []
   const review = backup.review ?? { schemaVersion: 1 as const, initialTaskId: backup.initial.taskId, revision: 0, rounds: [] }
-  return reviewWords(backup.initial, review).map(word => ({ spelling: word.spelling, coreMeaning: word.coreMeaning }))
+  const words = reviewWords(backup.initial, review)
+  return (scope === 'pending' ? words.filter(word => word.needsReview) : words)
+    .map(word => ({ spelling: word.spelling, coreMeaning: word.coreMeaning }))
+}
+export function historicalWrongWords(backup: LearningBackup): MemorizationWord[] {
+  return memorizationWords(backup, 'history')
 }

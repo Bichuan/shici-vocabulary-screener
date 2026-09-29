@@ -8,20 +8,25 @@ import HomeDashboard from './components/HomeDashboard.vue'
 import type { LearningDictionaryId } from './domain/learningNamespace.ts'
 
 function resolveView(hash: string) {
-  if (hash === '#print') return 'print'
+  if (hash === '#print' || hash === '#print-pending') return 'print'
   if (hash === '#review' || hash === '#review-tools') return 'review'
   if (hash === '#screening' || hash === '#screening-tools') return 'screening'
   if (hash === '#vocabulary') return 'vocabulary'
   return 'home'
 }
 const view = ref(resolveView(location.hash))
+const printScope = ref<'history' | 'pending'>(location.hash === '#print-pending' ? 'pending' : 'history')
 async function scrollToAnchor() {
   const id = location.hash.slice(1)
   if (!['review-tools', 'screening-tools'].includes(id)) return
   await nextTick()
   requestAnimationFrame(() => document.getElementById(id)?.scrollIntoView({ block: 'start' }))
 }
-function syncView() { view.value = resolveView(location.hash); void scrollToAnchor() }
+function syncView() {
+  view.value = resolveView(location.hash)
+  printScope.value = location.hash === '#print-pending' ? 'pending' : 'history'
+  void scrollToAnchor()
+}
 onMounted(() => { window.addEventListener('hashchange', syncView); void scrollToAnchor() })
 onUnmounted(() => window.removeEventListener('hashchange', syncView))
 
@@ -186,7 +191,7 @@ onMounted(loadVocabulary)
           <HomeDashboard :key="activeDictionaryId" v-show="view === 'home'" :words="bundle.words" :dictionary-version="bundle.contentVersion" :dictionary-id="activeDictionaryId" :active="view === 'home'" />
           <ScreeningSession :key="activeDictionaryId" v-show="view === 'screening'" :words="bundle.words" :dictionary-version="bundle.contentVersion" :dictionary-id="activeDictionaryId" :active="view === 'screening'" />
           <ReviewPanel :key="activeDictionaryId" v-show="view === 'review'" :words="bundle.words" :dictionary-version="bundle.contentVersion" :dictionary-id="activeDictionaryId" :active="view === 'review'" />
-          <PrintSheet v-if="view === 'print'" :key="activeDictionaryId" :words="bundle.words" :dictionary-version="bundle.contentVersion" :dictionary-id="activeDictionaryId" />
+          <PrintSheet v-if="view === 'print'" :key="`${activeDictionaryId}-${printScope}`" :words="bundle.words" :dictionary-version="bundle.contentVersion" :dictionary-id="activeDictionaryId" :scope="printScope" />
           <div v-show="view === 'vocabulary'">
           <section class="dictionary-card" aria-label="当前词库">
             <div class="dictionary-info">

@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs'
 import type { VocabularyBundle } from '../src/domain/types.ts'
 import { buildSampleQuestions } from '../src/domain/questions.ts'
 import { createIndexedDBStorage, questionSignature, type ScreeningSnapshot } from '../src/domain/screeningStorage.ts'
-import { createMemorizationCsv, historicalWrongWords, readLearningBackup, restoreLearningBackup, screeningBackupFileName, validateLearningBackup } from '../src/domain/studyTools.ts'
+import { createMemorizationCsv, csvFileName, historicalWrongWords, memorizationWords, readLearningBackup, restoreLearningBackup, screeningBackupFileName, validateLearningBackup } from '../src/domain/studyTools.ts'
 
 const bundle = JSON.parse(readFileSync(new URL('../public/data/vocabulary.json', import.meta.url), 'utf8')) as VocabularyBundle
 const questions = buildSampleQuestions(bundle.words, () => 0.999999, false).slice(0, 2)
@@ -30,6 +30,23 @@ describe('导出与备份', () => {
     const initial = snapshot()
     const backup = { schemaVersion: 1 as const, createdAt: '2026-09-13T00:00:00.000Z', dictionaryVersion: bundle.contentVersion, initial, review: null }
     expect(historicalWrongWords(backup)).toEqual([{ spelling: 'abandon', coreMeaning: '抛弃' }, { spelling: 'absorb', coreMeaning: '吸收' }])
+  })
+
+  it('连续四轮复筛按最新结果导出仍不会的词，重复答错不重复列出', () => {
+    const initial = snapshot()
+    const [first, second] = initial.records
+    const round = (records: typeof initial.records) => ({ wordIds: records.map(record => record.wordId), snapshot: { ...initial, records } })
+    const base = { schemaVersion: 1 as const, createdAt: '2026-09-13T00:00:00.000Z', dictionaryVersion: bundle.contentVersion, initial }
+    const rounds = [round([{ ...first!, result: 'correct' }, { ...second!, result: 'wrong' }])]
+    expect(memorizationWords({ ...base, review: { schemaVersion: 1, initialTaskId: initial.taskId, revision: 1, rounds } }, 'pending')).toEqual([{ spelling: 'absorb', coreMeaning: '吸收' }])
+    rounds.push(round([{ ...second!, result: 'wrong' }]), round([{ ...second!, result: 'wrong' }]))
+    const stillWrong = { ...base, review: { schemaVersion: 1 as const, initialTaskId: initial.taskId, revision: 3, rounds } }
+    expect(memorizationWords(stillWrong, 'pending')).toEqual([{ spelling: 'absorb', coreMeaning: '吸收' }])
+    rounds.push(round([{ ...second!, result: 'correct' }]))
+    const learned = { ...base, review: { schemaVersion: 1 as const, initialTaskId: initial.taskId, revision: 4, rounds } }
+    expect(memorizationWords(learned, 'pending')).toEqual([])
+    expect(memorizationWords(learned, 'history')).toHaveLength(2)
+    expect(csvFileName(new Date('2026-09-29T00:00:00.000Z'), 'netem-2024', 'pending')).toBe('拾词-考研-当前仍不会-2026-09-29.csv')
   })
 
   it('备份读取与恢复同时处理初筛和复筛键，恢复后可按当前题库验证', async () => {
