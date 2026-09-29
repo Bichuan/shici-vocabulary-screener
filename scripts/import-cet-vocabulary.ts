@@ -43,7 +43,7 @@ const bundle: VocabularyBundle = {
   schemaVersion: 1,
   contentVersion: `${source.commit}:exclude-${exclusionVersion}`,
   dictionaryId: 'cet6-2016-curated',
-  title: '大学英语六级词汇（精选）',
+  title: '六级词汇',
   source,
   report: activeReport,
   words: activeWords,

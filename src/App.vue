@@ -170,7 +170,7 @@ onMounted(loadVocabulary)
       <div class="content">
         <div v-if="view !== 'print'" class="dictionary-picker" role="group" aria-label="选择词库">
           <button type="button" :class="{ selected: selectedDictionary === 'netem' }" :aria-pressed="selectedDictionary === 'netem'" @click="selectDictionary('netem')">考研词汇</button>
-          <button type="button" :class="{ selected: selectedDictionary === 'cet6' }" :aria-pressed="selectedDictionary === 'cet6'" @click="selectDictionary('cet6')">六级精选</button>
+          <button type="button" :class="{ selected: selectedDictionary === 'cet6' }" :aria-pressed="selectedDictionary === 'cet6'" @click="selectDictionary('cet6')">六级词汇</button>
         </div>
         <section v-if="view === 'vocabulary'" class="intro">
           <div class="eyebrow">YOUR WORDS, YOUR PACE</div>
@@ -191,7 +191,7 @@ onMounted(loadVocabulary)
           <section class="dictionary-card" aria-label="当前词库">
             <div class="dictionary-info">
               <div class="pills"><span class="pill">当前词库</span><span class="source-tag">{{ selectedDictionary === 'netem' ? 'NETEMVocabulary' : 'CETVocabulary' }}</span></div>
-              <h2>{{ selectedDictionary === 'netem' ? bundle.title : '六级精选词汇' }}<span class="edition">{{ selectedDictionary === 'netem' ? '2024 大纲整理版' : '2016 年修订版来源' }}</span></h2>
+              <h2>{{ bundle.title }}<span class="edition">{{ selectedDictionary === 'netem' ? '2024 大纲整理版' : '2016 年修订版来源' }}</span></h2>
               <p>英文单词 + 简短中文释义，保留原始词表的简洁表达。</p>
               <button class="primary" @click="browse">浏览词库 <span aria-hidden="true">↗</span></button>
               <a class="secondary preview-entry" href="#screening">体验八选一题目 →</a>
@@ -225,7 +225,7 @@ onMounted(loadVocabulary)
             <p>固定快照：<code>{{ bundle.source.commit.slice(0, 12) }}</code>。数据采用 <a :href="licenseUrl" target="_blank" rel="noreferrer">{{ bundle.source.license }}</a> 许可，原始释义保持不变。</p>
             <p>原词库 {{ bundle.report.sourceCount.toLocaleString('en-US') }} 条，已按清单排除 {{ bundle.report.excludedCount ?? 0 }} 个词，当前保留 {{ bundle.words.length.toLocaleString('en-US') }} 条。</p>
             <p v-if="selectedDictionary === 'netem'">全部 5,220 个词均可筛查，正确项和七个干扰项都直接取自原始词表。进度与错词自动保存在当前浏览器，支持错词复筛、导出和打印。</p>
-            <p v-else>全部 4,719 个六级精选词均可筛查，选项取自原表。六级的初筛、错词、复筛、备份和打印记录独立保存在当前设备。</p>
+            <p v-else>全部 4,719 个六级词均可筛查，选项取自原表。六级的初筛、错词、复筛、备份和打印记录独立保存在当前设备。</p>
             <ul v-if="bundle.report.issues.length"><li v-for="(item, index) in bundle.report.issues" :key="index">{{ item.word }}：{{ item.message }}</li></ul>
           </div></details>
           </div>
