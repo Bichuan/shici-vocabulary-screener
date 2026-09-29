@@ -1,0 +1,9 @@
+{
+  "repository": "https://github.com/exam-data/CETVocabulary",
+  "commit": "7f21d0d9ad93c16a17849a24ccc4046e0f64c4af",
+  "fetchedAt": "2026-09-29T06:41:05.000Z",
+  "sourceUrl": "https://raw.githubusercontent.com/exam-data/CETVocabulary/7f21d0d9ad93c16a17849a24ccc4046e0f64c4af/cet_full_list.json",
+  "sha256": "88e008bca45885233404b77bf898537bb424dc2c04ec9b251d85a3c854f4936a",
+  "syllabusYear": 2016,
+  "license": "CC BY-NC-SA 4.0"
+}

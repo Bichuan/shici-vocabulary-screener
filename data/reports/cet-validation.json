@@ -1,0 +1,28 @@
+{
+  "sourceCount": 5278,
+  "importedCount": 4719,
+  "uniqueCount": 5278,
+  "emptyMeaningCount": 0,
+  "duplicateCount": 0,
+  "errorCount": 0,
+  "warningCount": 2,
+  "issues": [
+    {
+      "severity": "warning",
+      "code": "CASE_VARIANT",
+      "row": 5152,
+      "word": "March",
+      "message": "与 march 仅大小写不同"
+    },
+    {
+      "severity": "warning",
+      "code": "CASE_VARIANT",
+      "row": 5154,
+      "word": "May",
+      "message": "与 may 仅大小写不同"
+    }
+  ],
+  "excludedCount": 559,
+  "originalSixLevelCount": 1253,
+  "retainedSixLevelCount": 1189
+}

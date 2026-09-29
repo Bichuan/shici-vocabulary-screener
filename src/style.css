@@ -134,3 +134,24 @@ body{overflow-x:hidden}main{min-width:0}
   .install-guide>div{padding:13px 16px 16px}
 }
 @media(display-mode:standalone){.install-guide{display:none}}
+
+/* dictionary selection; CET preview cannot enter the NETEM-only learning store yet */
+.dictionary-picker{display:inline-flex;gap:5px;margin:0 0 18px;padding:5px;border:1px solid var(--line);border-radius:12px;background:#f5f7f1}
+.dictionary-picker button{min-height:37px;padding:8px 18px;border:0;border-radius:9px;background:transparent;color:#627362;font:inherit;font-size:13px;cursor:pointer}
+.dictionary-picker button.selected{background:#fff;color:var(--green);box-shadow:0 1px 5px #203b261c;font-weight:700}
+.dictionary-picker button:focus-visible{outline:2px solid var(--green);outline-offset:2px}
+.cet-preview{max-width:780px;margin:16px auto;padding:45px 42px;border:1px solid var(--line);border-radius:20px;background:#fff}
+.cet-preview h1{margin:12px 0;font-size:clamp(28px,4vw,42px);color:var(--green)}
+.cet-preview p{line-height:1.8;color:#617062}
+.cet-preview-note{margin:24px 0;padding:16px 19px;border-radius:11px;background:#f0f4ea;color:#425a43;line-height:1.7}
+.cet-preview .primary,.cet-gate .primary{display:inline-flex;text-decoration:none}
+.cet-gate{max-width:720px;margin:35px auto}
+.cet-gate h2{margin:0 0 10px}
+.cet-gate p{line-height:1.8}
+.cet-gate .secondary{margin-left:10px}
+@media(max-width:760px){
+  .dictionary-picker{display:flex;width:100%;margin-bottom:15px}
+  .dictionary-picker button{flex:1}
+  .cet-preview{margin-top:4px;padding:28px 21px}
+  .cet-gate .secondary{margin-left:0;margin-top:10px}
+}

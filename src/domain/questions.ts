@@ -32,6 +32,12 @@ export const SEMANTIC_CONFLICT_GROUPS = [
   ['decree', 'statute'],
 ] as const
 
+const CET_SEMANTIC_CONFLICT_GROUPS = [
+  // The CET source uses 花 for spend and 花费 for cost/expense/expend.
+  ['spend', 'cost', 'expense', 'expend'],
+  ['fault', 'shortcoming', 'drawback'],
+] as const
+
 const semanticGroupsBySpelling = new Map<string, Set<number>>()
 for (const [groupIndex, group] of SEMANTIC_CONFLICT_GROUPS.entries()) {
   for (const spelling of group) {
@@ -42,7 +48,22 @@ for (const [groupIndex, group] of SEMANTIC_CONFLICT_GROUPS.entries()) {
   }
 }
 
+const cetSemanticGroupsBySpelling = new Map<string, Set<number>>()
+for (const [groupIndex, group] of CET_SEMANTIC_CONFLICT_GROUPS.entries()) {
+  for (const spelling of group) {
+    const key = spelling.toLocaleLowerCase('en-US')
+    const memberships = cetSemanticGroupsBySpelling.get(key) ?? new Set<number>()
+    memberships.add(groupIndex)
+    cetSemanticGroupsBySpelling.set(key, memberships)
+  }
+}
+
 function hasSemanticConflict(left: VocabularyWord, right: VocabularyWord) {
+  if (left.id.startsWith('cet:') && right.id.startsWith('cet:')) {
+    const leftGroups = cetSemanticGroupsBySpelling.get(left.spelling.toLocaleLowerCase('en-US'))
+    const rightGroups = cetSemanticGroupsBySpelling.get(right.spelling.toLocaleLowerCase('en-US'))
+    if (leftGroups && rightGroups && [...leftGroups].some(group => rightGroups.has(group))) return true
+  }
   const leftGroups = semanticGroupsBySpelling.get(left.spelling.toLocaleLowerCase('en-US'))
   const rightGroups = semanticGroupsBySpelling.get(right.spelling.toLocaleLowerCase('en-US'))
   return !!leftGroups && !!rightGroups && [...leftGroups].some(group => rightGroups.has(group))
@@ -91,6 +112,7 @@ export function validateQuestions(questions: ScreeningQuestion[], words: Vocabul
 }
 
 function orderedWords(words: VocabularyWord[]) {
+  if (words.every(word => word.id.startsWith('cet:'))) return [...words].sort((a, b) => a.sourceOrder - b.sourceOrder)
   const legacyPosition = new Map<string, number>(LEGACY_SAMPLE_ORDER.map((spelling, index) => [spelling, index]))
   return [...words].sort((a, b) => {
     const ai = legacyPosition.get(a.spelling)
