@@ -7,8 +7,16 @@ import { historicalWrongWords, readLearningBackup, validateLearningBackup } from
 const props = defineProps<{ words: VocabularyWord[]; dictionaryVersion: string }>()
 const loading = ref(true)
 const error = ref('')
-const wordList = ref<{ spelling: string; coreMeaning: string }[]>([])
+type MemorizationWord = { spelling: string; coreMeaning: string }
+const wordList = ref<MemorizationWord[]>([])
 const count = computed(() => wordList.value.length)
+const rows = computed(() => {
+  const result: (MemorizationWord | null)[][] = []
+  for (let index = 0; index < wordList.value.length; index += 3) {
+    result.push([wordList.value[index] ?? null, wordList.value[index + 1] ?? null, wordList.value[index + 2] ?? null])
+  }
+  return result
+})
 function back() { window.location.hash = '#review' }
 function printSheet() { window.print() }
 onMounted(async () => {
@@ -22,12 +30,18 @@ onMounted(async () => {
 
 <template>
   <section class="print-sheet" aria-label="错词背诵打印表">
-    <div class="print-head no-print"><div><h1>错词背诵表</h1><p>共 {{ count }} 词 · A4 三栏，先向下读，再从左到右。若打印预览仍显示网址和日期，请在打印设置中关闭“页眉和页脚”。</p></div><div class="print-actions"><button class="secondary" @click="back">返回错词列表</button><button class="primary" :disabled="loading || !!error || !count" @click="printSheet">打印 / 保存为 PDF</button></div></div>
+    <div class="print-head no-print"><div><h1>错词背诵表</h1><p>共 {{ count }} 词 · 每行 3 词，从左到右、逐行向下。若打印预览仍显示网址和日期，请在打印设置中关闭“页眉和页脚”。</p></div><div class="print-actions"><button class="secondary" @click="back">返回错词列表</button><button class="primary" :disabled="loading || !!error || !count" @click="printSheet">打印 / 保存为 PDF</button></div></div>
     <div v-if="loading" class="message-card" role="status">正在整理打印表…</div>
     <div v-else-if="error" class="message-card error" role="alert">{{ error }}</div>
     <div v-else-if="!count" class="message-card"><h2>暂无历史错词</h2><p class="preview-note">初筛答错的单词会自动出现在这里。</p></div>
-    <div v-else class="memorization-flow" role="list" aria-label="单词与释义">
-      <div v-for="word in wordList" :key="word.spelling" class="memorization-entry" role="listitem"><span>{{ word.spelling }}</span><span>{{ word.coreMeaning }}</span></div>
-    </div>
+    <table v-else class="memorization-grid" aria-label="单词与释义">
+      <tbody>
+        <tr v-for="(row, rowIndex) in rows" :key="rowIndex">
+          <td v-for="(word, columnIndex) in row" :key="columnIndex">
+            <div v-if="word" class="memorization-pair"><span>{{ word.spelling }}</span><span>{{ word.coreMeaning }}</span></div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
   </section>
 </template>

@@ -327,7 +327,7 @@ test('完整初筛、复筛、CSV、打印、备份恢复及窄屏布局', async
   expect(JSON.parse(readFileSync(partialPath, 'utf8')).review).toBeNull()
 
   await page.getByRole('link', { name: '打印背诵表', exact: true }).click()
-  await expect(page.locator('.print-table tbody tr')).toHaveCount(1)
+  await expect(page.locator('.memorization-grid tbody tr')).toHaveCount(1)
   await page.getByRole('button', { name: '返回错词列表' }).click()
   await page.goto('/#screening')
   await expect(card(page).getByRole('heading', { name: questions[1]!.spelling, exact: true })).toBeVisible()
@@ -360,11 +360,12 @@ test('完整初筛、复筛、CSV、打印、备份恢复及窄屏布局', async
   await (await backupDownload).saveAs(backupPath)
 
   await page.getByRole('link', { name: '打印背诵表', exact: true }).click()
-  await expect(page.locator('.print-table tbody tr')).toHaveCount(2)
+  await expect(page.locator('.memorization-grid tbody tr')).toHaveCount(1)
+  await expect(page.locator('.memorization-grid tbody tr td .memorization-pair')).toHaveCount(2)
   await page.emulateMedia({ media: 'print' })
   await expect(page.locator('.sidebar')).toBeHidden()
   await expect(page.locator('.print-actions')).toBeHidden()
-  await expect(page.locator('.print-table').first()).toBeVisible()
+  await expect(page.locator('.memorization-grid')).toBeVisible()
   await page.screenshot({ path: testInfo.outputPath('print-layout.png'), fullPage: true })
   const pdf = await page.pdf({ path: testInfo.outputPath('memorization.pdf'), preferCSSPageSize: true })
   expect(pdf.subarray(0, 4).toString()).toBe('%PDF')
@@ -471,7 +472,7 @@ test('iPhone 页面关闭并重新打开后从下一题继续，作答期间不�
   expect(networkWrites).toEqual([])
 })
 
-test('48 词 A4 三栏纵向排列与打印按钮', async ({ page }, testInfo) => {
+test('48 词 A4 每行三词与打印按钮', async ({ page }, testInfo) => {
   await useTestVocabulary(page)
   await page.goto('/#print')
   const taskId = 'isolated-print-fixture'
@@ -498,9 +499,10 @@ test('48 词 A4 三栏纵向排列与打印按钮', async ({ page }, testInfo) =
     })
   }, snapshot)
   await page.reload()
-  await expect(page.locator('.memorization-entry')).toHaveCount(48)
-  await expect(page.locator('.memorization-entry').first().locator('span')).toHaveText([questions[0]!.spelling, questions[0]!.coreMeaning])
-  expect(await page.locator('.memorization-entry span:first-child').allTextContents()).toEqual(questions.map(question => question.spelling))
+  await expect(page.locator('.memorization-grid tr')).toHaveCount(16)
+  await expect(page.locator('.memorization-grid tr').first().locator('td')).toHaveCount(3)
+  await expect(page.locator('.memorization-grid tr').first().locator('span')).toHaveText(questions.slice(0, 3).flatMap(question => [question.spelling, question.coreMeaning]))
+  expect(await page.locator('.memorization-pair span:first-child').allTextContents()).toEqual(questions.map(question => question.spelling))
   await page.evaluate(() => { window.print = () => { document.body.dataset.printCalled = 'yes' } })
   await page.getByRole('button', { name: '打印 / 保存为 PDF' }).click()
   await expect(page.locator('body')).toHaveAttribute('data-print-called', 'yes')
@@ -544,9 +546,9 @@ test('多页背诵表连续排词并由打印引擎自动分页', async ({ page 
     })
   }, snapshot)
   await page.reload()
-  await expect(page.locator('.memorization-entry')).toHaveCount(216)
-  expect(await page.locator('.memorization-entry span:first-child').allTextContents()).toEqual(selectedQuestions.map(question => question.spelling))
-  expect(await page.locator('.memorization-flow').evaluate(element => getComputedStyle(element).columnCount)).toBe('3')
+  await expect(page.locator('.memorization-grid tr')).toHaveCount(72)
+  expect(await page.locator('.memorization-pair span:first-child').allTextContents()).toEqual(selectedQuestions.map(question => question.spelling))
+  expect(await page.locator('.memorization-grid tr').first().locator('td').count()).toBe(3)
   await page.emulateMedia({ media: 'print' })
   const pdf = await page.pdf({ path: testInfo.outputPath('a4-natural-pages.pdf'), preferCSSPageSize: true })
   const pageCount = pdf.toString('latin1').match(/\/Type \/Page\b/g)?.length ?? 0
