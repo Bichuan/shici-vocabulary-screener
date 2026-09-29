@@ -51,7 +51,7 @@
 
 ## Windows 桌面安装包
 
-最新 64 位 Windows 安装程序可在 [Releases](https://github.com/Bichuan/shici-vocabulary-screener/releases/latest) 的 **Assets** 中下载 `拾词-安装程序-0.4.0.exe`。双击后按当前用户安装，并自动创建“拾词”桌面快捷方式和开始菜单入口；安装后的应用完全离线运行，不需要 Node.js、浏览器或本地服务。0.4.0 包含考研与六级双词库、复筛以及两种范围的导出与打印。
+最新 64 位 Windows 安装程序可在 [Releases](https://github.com/Bichuan/shici-vocabulary-screener/releases/latest) 的 **Assets** 中下载 `Shici-Vocabulary-Screener-Setup-0.4.0.exe`。双击后按当前用户安装，并自动创建“拾词”桌面快捷方式和开始菜单入口；安装后的应用完全离线运行，不需要 Node.js、浏览器或本地服务。0.4.0 包含考研与六级双词库、复筛以及两种范围的导出与打印。
 
 桌面应用将学习进度保存在自己的本地数据目录。浏览器版记录不会自动出现在桌面版中，需要先在浏览器版“错词与复筛”页面备份学习记录，再在桌面版恢复该 JSON 备份。卸载程序默认保留本地学习数据。
 
