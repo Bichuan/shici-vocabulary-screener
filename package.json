@@ -4,7 +4,7 @@
   "description": "面向考研学生的本地英语词汇筛查器",
   "author": "拾词",
   "private": true,
-  "version": "0.3.0",
+  "version": "0.4.0",
   "main": "electron/main.cjs",
   "type": "module",
   "scripts": {
