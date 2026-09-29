@@ -327,7 +327,7 @@ test('完整初筛、复筛、CSV、打印、备份恢复及窄屏布局', async
   expect(JSON.parse(readFileSync(partialPath, 'utf8')).review).toBeNull()
 
   await page.getByRole('link', { name: '打印背诵表', exact: true }).click()
-  await expect(page.locator('.memorization-grid tbody tr')).toHaveCount(1)
+  await expect(page.locator('.memorization-row')).toHaveCount(1)
   await page.getByRole('button', { name: '返回错词列表' }).click()
   await page.goto('/#screening')
   await expect(card(page).getByRole('heading', { name: questions[1]!.spelling, exact: true })).toBeVisible()
@@ -360,8 +360,8 @@ test('完整初筛、复筛、CSV、打印、备份恢复及窄屏布局', async
   await (await backupDownload).saveAs(backupPath)
 
   await page.getByRole('link', { name: '打印背诵表', exact: true }).click()
-  await expect(page.locator('.memorization-grid tbody tr')).toHaveCount(1)
-  await expect(page.locator('.memorization-grid tbody tr td .memorization-pair')).toHaveCount(2)
+  await expect(page.locator('.memorization-row')).toHaveCount(1)
+  await expect(page.locator('.memorization-row .memorization-pair')).toHaveCount(2)
   await page.emulateMedia({ media: 'print' })
   await expect(page.locator('.sidebar')).toBeHidden()
   await expect(page.locator('.print-actions')).toBeHidden()
@@ -499,9 +499,9 @@ test('48 词 A4 每行三词与打印按钮', async ({ page }, testInfo) => {
     })
   }, snapshot)
   await page.reload()
-  await expect(page.locator('.memorization-grid tr')).toHaveCount(16)
-  await expect(page.locator('.memorization-grid tr').first().locator('td')).toHaveCount(3)
-  await expect(page.locator('.memorization-grid tr').first().locator('span')).toHaveText(questions.slice(0, 3).flatMap(question => [question.spelling, question.coreMeaning]))
+  await expect(page.locator('.memorization-row')).toHaveCount(16)
+  await expect(page.locator('.memorization-row').first().locator('.memorization-cell')).toHaveCount(3)
+  await expect(page.locator('.memorization-row').first().locator('span')).toHaveText(questions.slice(0, 3).flatMap(question => [question.spelling, question.coreMeaning]))
   expect(await page.locator('.memorization-pair span:first-child').allTextContents()).toEqual(questions.map(question => question.spelling))
   await page.evaluate(() => { window.print = () => { document.body.dataset.printCalled = 'yes' } })
   await page.getByRole('button', { name: '打印 / 保存为 PDF' }).click()
@@ -513,11 +513,11 @@ test('48 词 A4 每行三词与打印按钮', async ({ page }, testInfo) => {
   expect(pdf.toString('latin1').match(/\/Type \/Page\b/g)?.length).toBe(1)
 })
 
-test('多页背诵表连续排词并由打印引擎自动分页', async ({ page }, testInfo) => {
+test('大量错词按完整的三词行跨页打印', async ({ page }, testInfo) => {
   // Long spellings and meanings exercise the rows most likely to wrap.
   const selectedIds = new Set([...fullQuestions]
     .sort((a, b) => (b.coreMeaning.length + b.spelling.length / 2) - (a.coreMeaning.length + a.spelling.length / 2))
-    .slice(0, 216).map(question => question.wordId))
+    .slice(0, 900).map(question => question.wordId))
   const selectedWords = fullBundle.words.filter(word => selectedIds.has(word.id))
   const selectedBundle: VocabularyBundle = { ...fullBundle, words: selectedWords, report: { ...fullBundle.report, importedCount: selectedWords.length } }
   const selectedQuestions = buildSampleQuestions(selectedWords, () => 0.999999, true)
@@ -546,20 +546,20 @@ test('多页背诵表连续排词并由打印引擎自动分页', async ({ page 
     })
   }, snapshot)
   await page.reload()
-  await expect(page.locator('.memorization-grid tr')).toHaveCount(72)
+  await expect(page.locator('.memorization-row')).toHaveCount(300)
   expect(await page.locator('.memorization-pair span:first-child').allTextContents()).toEqual(selectedQuestions.map(question => question.spelling))
-  expect(await page.locator('.memorization-grid tr').first().locator('td').count()).toBe(3)
+  expect(await page.locator('.memorization-row').first().locator('.memorization-cell').count()).toBe(3)
   await page.emulateMedia({ media: 'print' })
   const pdf = await page.pdf({ path: testInfo.outputPath('a4-natural-pages.pdf'), preferCSSPageSize: true })
   const pageCount = pdf.toString('latin1').match(/\/Type \/Page\b/g)?.length ?? 0
-  expect(pageCount).toBeGreaterThan(1)
-  expect(pageCount).toBeLessThan(6)
+  expect(pageCount).toBeGreaterThan(5)
+  expect(pageCount).toBeLessThan(20)
   await page.pdf({ path: testInfo.outputPath('a4-browser-headers.pdf'), preferCSSPageSize: true, displayHeaderFooter: true })
   await page.addStyleTag({ content: '@page { size: A4 portrait; margin: 20mm }' })
   const pdfWithWideMargins = await page.pdf({ path: testInfo.outputPath('a4-wide-margins.pdf'), preferCSSPageSize: true })
   const widePageCount = pdfWithWideMargins.toString('latin1').match(/\/Type \/Page\b/g)?.length ?? 0
   expect(widePageCount).toBeGreaterThanOrEqual(pageCount)
-  expect(widePageCount).toBeLessThan(7)
+  expect(widePageCount).toBeLessThan(22)
 })
 
 test('界面缩放按钮、快捷键和本地记忆', async ({ page }) => {

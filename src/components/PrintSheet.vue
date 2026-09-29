@@ -34,14 +34,12 @@ onMounted(async () => {
     <div v-if="loading" class="message-card" role="status">正在整理打印表…</div>
     <div v-else-if="error" class="message-card error" role="alert">{{ error }}</div>
     <div v-else-if="!count" class="message-card"><h2>暂无历史错词</h2><p class="preview-note">初筛答错的单词会自动出现在这里。</p></div>
-    <table v-else class="memorization-grid" aria-label="单词与释义">
-      <tbody>
-        <tr v-for="(row, rowIndex) in rows" :key="rowIndex">
-          <td v-for="(word, columnIndex) in row" :key="columnIndex">
-            <div v-if="word" class="memorization-pair"><span>{{ word.spelling }}</span><span>{{ word.coreMeaning }}</span></div>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+    <div v-else class="memorization-grid" role="table" aria-label="单词与释义">
+      <div v-for="(row, rowIndex) in rows" :key="rowIndex" class="memorization-row" role="row">
+        <div v-for="(word, columnIndex) in row" :key="columnIndex" class="memorization-cell" role="cell">
+          <div v-if="word" class="memorization-pair"><span>{{ word.spelling }}</span><span>{{ word.coreMeaning }}</span></div>
+        </div>
+      </div>
+    </div>
   </section>
 </template>
