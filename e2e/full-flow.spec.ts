@@ -23,9 +23,9 @@ test('主程序加载失败仍可刷新恢复，刷新保留学习进度', async
   await page.getByRole('button', { name: '刷新 / 检查更新' }).click()
   await expect(page.locator('.screening-progress')).toContainText('已筛选 1 / 48 词')
 })
-async function useTestVocabulary(page: Page) {
+async function useTestVocabulary(page: Page, selectedBundle = bundle) {
   await page.addInitScript(() => { Math.random = () => 0.999999 })
-  await page.route('**/data/vocabulary.json', route => route.fulfill({ contentType: 'application/json', body: JSON.stringify(bundle) }))
+  await page.route('**/data/vocabulary.json', route => route.fulfill({ contentType: 'application/json', body: JSON.stringify(selectedBundle) }))
 }
 async function answer(page: Page, index: number, correct = true) {
   const q = questions[index]!
@@ -489,6 +489,47 @@ test('48 词 A4 三栏纵向排列与打印按钮', async ({ page }, testInfo) =
   await page.screenshot({ path: testInfo.outputPath('a4-layout.png'), fullPage: true })
   const pdf = await page.pdf({ path: testInfo.outputPath('a4-multipage.pdf'), preferCSSPageSize: true })
   expect(pdf.toString('latin1').match(/\/Type \/Page\b/g)?.length).toBe(1)
+})
+
+test('多页背诵表每组词只占一张 A4，且没有页内标题', async ({ page }, testInfo) => {
+  // Long spellings and meanings exercise the rows most likely to wrap.
+  const selectedIds = new Set([...fullQuestions]
+    .sort((a, b) => (b.coreMeaning.length + b.spelling.length / 2) - (a.coreMeaning.length + a.spelling.length / 2))
+    .slice(0, 216).map(question => question.wordId))
+  const selectedWords = fullBundle.words.filter(word => selectedIds.has(word.id))
+  const selectedBundle: VocabularyBundle = { ...fullBundle, words: selectedWords, report: { ...fullBundle.report, importedCount: selectedWords.length } }
+  const selectedQuestions = buildSampleQuestions(selectedWords, () => 0.999999, true)
+  await useTestVocabulary(page, selectedBundle)
+  await page.goto('/#print')
+  const taskId = 'multipage-print-fixture'
+  const snapshot = {
+    schemaVersion: 1, taskId, revision: selectedQuestions.length, dictionaryVersion: selectedBundle.contentVersion, questionSignature: questionSignature(selectedQuestions),
+    records: selectedQuestions.map(question => {
+      const option = question.options.find(item => item.id !== question.correctOptionId)!
+      return { id: question.id, taskId, wordId: question.wordId, dictionaryVersion: selectedBundle.contentVersion, questionVersion: question.version, selectedOptionId: option.id, result: 'wrong', answeredAt: new Date().toISOString(), spelling: question.spelling, coreMeaning: question.coreMeaning, selectedMeaning: option.text }
+    }),
+  }
+  await page.evaluate(async initial => {
+    await new Promise<void>((resolve, reject) => {
+      const request = indexedDB.open('shici-learning', 1)
+      request.onupgradeneeded = () => request.result.createObjectStore('sessions')
+      request.onsuccess = () => {
+        const db = request.result
+        const tx = db.transaction('sessions', 'readwrite')
+        tx.objectStore('sessions').put(initial, 'initial-screening')
+        tx.oncomplete = () => { db.close(); resolve() }
+        tx.onabort = () => reject(tx.error)
+      }
+      request.onerror = () => reject(request.error)
+    })
+  }, snapshot)
+  await page.reload()
+  await expect(page.locator('.memorization-page')).toHaveCount(3)
+  await expect(page.locator('.print-table tbody tr')).toHaveCount(216)
+  await expect(page.locator('.memorization-title')).toHaveCount(0)
+  await page.emulateMedia({ media: 'print' })
+  const pdf = await page.pdf({ path: testInfo.outputPath('a4-three-pages.pdf'), preferCSSPageSize: true })
+  expect(pdf.toString('latin1').match(/\/Type \/Page\b/g)?.length).toBe(3)
 })
 
 test('界面缩放按钮、快捷键和本地记忆', async ({ page }) => {
