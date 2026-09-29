@@ -498,13 +498,9 @@ test('48 词 A4 三栏纵向排列与打印按钮', async ({ page }, testInfo) =
     })
   }, snapshot)
   await page.reload()
-  await expect(page.locator('.print-table tbody tr')).toHaveCount(48)
-  await expect(page.locator('.print-table')).toHaveCount(3)
-  await expect(page.locator('.print-table th')).toHaveCount(0)
-  await expect(page.locator('.print-table tbody tr').first().locator('td')).toHaveText([questions[0]!.spelling, questions[0]!.coreMeaning])
-  await expect(page.locator('.print-table').nth(0).locator('tbody tr').first()).toContainText(questions[0]!.spelling)
-  await expect(page.locator('.print-table')).toHaveCount(3)
-  expect(await page.locator('.print-table tbody tr td:first-child').allTextContents()).toEqual(questions.map(question => question.spelling))
+  await expect(page.locator('.memorization-entry')).toHaveCount(48)
+  await expect(page.locator('.memorization-entry').first().locator('span')).toHaveText([questions[0]!.spelling, questions[0]!.coreMeaning])
+  expect(await page.locator('.memorization-entry span:first-child').allTextContents()).toEqual(questions.map(question => question.spelling))
   await page.evaluate(() => { window.print = () => { document.body.dataset.printCalled = 'yes' } })
   await page.getByRole('button', { name: '打印 / 保存为 PDF' }).click()
   await expect(page.locator('body')).toHaveAttribute('data-print-called', 'yes')
@@ -515,7 +511,7 @@ test('48 词 A4 三栏纵向排列与打印按钮', async ({ page }, testInfo) =
   expect(pdf.toString('latin1').match(/\/Type \/Page\b/g)?.length).toBe(1)
 })
 
-test('多页背诵表每组词只占一张 A4，且没有页内标题', async ({ page }, testInfo) => {
+test('多页背诵表连续排词并由打印引擎自动分页', async ({ page }, testInfo) => {
   // Long spellings and meanings exercise the rows most likely to wrap.
   const selectedIds = new Set([...fullQuestions]
     .sort((a, b) => (b.coreMeaning.length + b.spelling.length / 2) - (a.coreMeaning.length + a.spelling.length / 2))
@@ -548,17 +544,20 @@ test('多页背诵表每组词只占一张 A4，且没有页内标题', async ({
     })
   }, snapshot)
   await page.reload()
-  await expect(page.locator('.print-table tbody tr')).toHaveCount(216)
-  const pageCount = await page.locator('.memorization-page').count()
-  expect(pageCount).toBeGreaterThan(1)
-  await expect(page.locator('.memorization-title')).toHaveCount(0)
+  await expect(page.locator('.memorization-entry')).toHaveCount(216)
+  expect(await page.locator('.memorization-entry span:first-child').allTextContents()).toEqual(selectedQuestions.map(question => question.spelling))
+  expect(await page.locator('.memorization-flow').evaluate(element => getComputedStyle(element).columnCount)).toBe('3')
   await page.emulateMedia({ media: 'print' })
   const pdf = await page.pdf({ path: testInfo.outputPath('a4-natural-pages.pdf'), preferCSSPageSize: true })
-  expect(pdf.toString('latin1').match(/\/Type \/Page\b/g)?.length).toBe(pageCount)
+  const pageCount = pdf.toString('latin1').match(/\/Type \/Page\b/g)?.length ?? 0
+  expect(pageCount).toBeGreaterThan(1)
+  expect(pageCount).toBeLessThan(6)
   await page.pdf({ path: testInfo.outputPath('a4-browser-headers.pdf'), preferCSSPageSize: true, displayHeaderFooter: true })
   await page.addStyleTag({ content: '@page { size: A4 portrait; margin: 20mm }' })
   const pdfWithWideMargins = await page.pdf({ path: testInfo.outputPath('a4-wide-margins.pdf'), preferCSSPageSize: true })
-  expect(pdfWithWideMargins.toString('latin1').match(/\/Type \/Page\b/g)?.length).toBe(pageCount)
+  const widePageCount = pdfWithWideMargins.toString('latin1').match(/\/Type \/Page\b/g)?.length ?? 0
+  expect(widePageCount).toBeGreaterThanOrEqual(pageCount)
+  expect(widePageCount).toBeLessThan(7)
 })
 
 test('界面缩放按钮、快捷键和本地记忆', async ({ page }) => {
