@@ -83,8 +83,8 @@ test.describe('安卓 Chrome 移动布局', () => {
   test('缓存就绪后可离线打开三套词库，离线作答可续筛和备份', async ({ page, context }, testInfo) => {
     await page.addInitScript(() => { Math.random = () => 0.5 })
     await page.goto('/')
-    await page.getByText('添加到 安卓主屏幕', { exact: true }).click()
-    await expect(page.locator('.install-guide')).toContainText('Chrome')
+    await page.getByText('添加到安卓主屏幕', { exact: true }).click()
+    await expect(page.locator('.install-guide[open]')).toContainText('Chrome')
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
     await page.evaluate(() => navigator.serviceWorker.ready.then(() => true))
     await page.reload()

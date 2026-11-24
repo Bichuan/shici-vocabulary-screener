@@ -6,7 +6,6 @@ import { historicalWrongWords, readLearningBackup, restoreLearningBackup, valida
 import { dictionaryLabel, type LearningDictionaryId } from '../domain/learningNamespace.ts'
 
 const props = defineProps<{ words: VocabularyWord[]; dictionaryVersion: string; dictionaryId: LearningDictionaryId; active: boolean }>()
-const android = /android/i.test(navigator.userAgent)
 const answeredCount = ref(0)
 const wrongCount = ref(0)
 const loading = ref(false)
@@ -116,33 +115,35 @@ watch(() => props.active, active => { if (active) void loadSummary() }, { immedi
     <p v-if="restartMessage" class="home-error" role="alert">{{ restartMessage }}</p>
 
     <a class="home-vocabulary-link" href="#vocabulary">查看完整词库与数据来源 <span aria-hidden="true">→</span></a>
-    <details class="install-guide" @toggle="revealInstallGuide">
-      <summary><span>添加到 {{ android ? '安卓' : 'iPhone' }}主屏幕</span><small>查看安装步骤</small></summary>
-      <div v-if="android">
-        <ol>
-          <li>用安卓设备的 <strong>Chrome</strong> 打开拾词的网址。</li>
-          <li>点地址栏旁的 <strong>⋮</strong>，选择<strong>安装应用</strong>，或从<strong>添加到主屏幕</strong>进入安装。</li>
-          <li>按提示确认。之后从主屏幕上的「拾词」打开，也可以继续使用浏览器入口。</li>
-        </ol>
-        <p>请先联网打开，等应用缓存完成后再离线使用。可用飞行模式重新打开一次，确认词库能加载。</p>
-        <ul>
-          <li>学习记录保存在本机，可在「备份与恢复」中导出 JSON。</li>
-        </ul>
-      </div>
-      <div v-else>
-        <ol>
-          <li>用 iPhone 的 <strong>Safari</strong> 打开拾词的网址。</li>
-          <li>点击 Safari 底部的<strong>分享按钮</strong>（方框向上箭头）。</li>
-          <li>在分享菜单中选择<strong>添加到主屏幕</strong>。</li>
-          <li>确认名称为“拾词”，点击右上角的<strong>添加</strong>。</li>
-        </ol>
-        <p>首次联网完整打开一次后即可离线使用。以后点击主屏幕上的“拾词”会独立打开；应用按竖屏优先设计。</p>
-        <ul>
-          <li>学习数据只保存在当前设备，不会上传到服务器。</li>
-          <li>Safari 网页与主屏幕应用的存储可能分开，请固定从同一个入口学习。</li>
-          <li>清理 Safari 网站数据或删除应用可能丢失记录，请定期在“备份与恢复”中导出 JSON 备份。</li>
-        </ul>
-      </div>
-    </details>
+    <div class="install-guides">
+      <details class="install-guide" @toggle="revealInstallGuide">
+        <summary><span>添加到 iPhone 主屏幕</span><small>查看安装步骤</small></summary>
+        <div>
+          <ol>
+            <li>用 iPhone 的 <strong>Safari</strong> 打开拾词的网址。</li>
+            <li>点击 Safari 底部的<strong>分享按钮</strong>（方框向上箭头）。</li>
+            <li>在分享菜单中选择<strong>添加到主屏幕</strong>。</li>
+            <li>确认名称为“拾词”，点击右上角的<strong>添加</strong>。</li>
+          </ol>
+          <p>首次联网完整打开一次后即可离线使用。以后点击主屏幕上的“拾词”会独立打开；应用按竖屏优先设计。</p>
+          <ul>
+            <li>学习数据只保存在当前设备，不会上传到服务器。</li>
+            <li>Safari 网页与主屏幕应用的存储可能分开，请固定从同一个入口学习。</li>
+            <li>清理 Safari 网站数据或删除应用可能丢失记录，请定期在“备份与恢复”中导出 JSON 备份。</li>
+          </ul>
+        </div>
+      </details>
+      <details class="install-guide" @toggle="revealInstallGuide">
+        <summary><span>添加到安卓主屏幕</span><small>查看安装步骤</small></summary>
+        <div>
+          <ol>
+            <li>用安卓手机的 <strong>Chrome</strong> 打开拾词。</li>
+            <li>点地址栏旁的 <strong>⋮</strong>，选择<strong>安装并创建快捷方式</strong>，再点<strong>安装</strong>。有些版本会显示<strong>安装应用</strong>或<strong>添加到主屏幕</strong>。</li>
+            <li>按提示确认，然后从主屏幕点开「拾词」。</li>
+          </ol>
+          <p>首次请联网打开，等待词库缓存完成后即可离线筛查。</p>
+        </div>
+      </details>
+    </div>
   </section>
 </template>
