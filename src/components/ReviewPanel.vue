@@ -76,7 +76,7 @@ async function start() {
 }
 async function back() { session.value = null; await load() }
 function transferMessage(result: FileTransferResult, noun: string) {
-  if (result === 'shared') return noun + '已通过系统分享处理，可保存到“文件”或 iCloud Drive。'
+  if (result === 'shared') return noun + '已通过系统分享处理，请在所选位置查找文件。'
   if (result === 'downloaded') return noun + '已下载。'
   return '已取消系统分享，现有学习记录没有改变。'
 }
@@ -183,7 +183,7 @@ function cancelRestore() {
           <p>确认后会覆盖这个应用当前的初筛与复筛记录。</p>
           <div class="restore-actions"><button class="primary" :disabled="toolBusy" @click="confirmRestore">确认恢复</button><button class="secondary" :disabled="toolBusy" @click="cancelRestore">取消</button></div>
         </section>
-        <p class="tool-note">iPhone 会优先打开系统分享面板，可保存到“文件”或 iCloud Drive；不支持分享文件时会直接下载。恢复前会校验文件和词库版本。</p>
+        <p class="tool-note">设备支持文件分享时可选择保存位置，也可能由浏览器直接下载。恢复前会校验文件和词库版本。</p>
       </section>
       <p class="preview-footnote">复筛进度自动保存在本机。备份文件请放在自己能找到的位置。</p>
     </template>

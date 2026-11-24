@@ -1,0 +1,34 @@
+{
+  "basicWords": [
+    "airport", "all", "animal", "April", "bathroom", "beautiful", "boat", "breakfast",
+    "bus", "carrot", "city", "classroom", "clothes", "coffee", "computer", "day",
+    "December", "desk", "difficult", "dinner", "evening", "Friday", "hat",
+    "homework", "hospital", "hotel", "January", "July", "June", "kitchen", "knife",
+    "lamp", "lemon", "lunch", "map", "meal", "meat", "milk", "Monday", "month",
+    "mountain", "music", "night", "November", "October", "one", "rice",
+    "Saturday", "September", "sheep", "skirt", "street", "student", "Sunday",
+    "supermarket", "taxi", "tea", "teacher", "telephone", "third", "thousand",
+    "Thursday", "towel", "town", "Tuesday", "vegetable", "village", "Wednesday",
+    "weekend", "yellow", "zero"
+  ],
+  "preferredMeanings": {
+    "account for": "说明……的原因",
+    "address": "对付",
+    "air": "使通风",
+    "august": "威严的",
+    "book": "预订",
+    "charge": "收费",
+    "conquest": "征服",
+    "credentials": "身份证明",
+    "face": "面对",
+    "give": "给",
+    "issue": "发布",
+    "intermediate": "中级的",
+    "march": "行军",
+    "may": "可以",
+    "present": "呈现",
+    "qualifications": "任职资格",
+    "refund": "归还",
+    "resolve": "解决"
+  }
+}

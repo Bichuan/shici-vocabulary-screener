@@ -13,7 +13,7 @@ async function registerOfflineWorker() {
       scope: scope.href,
       updateViaCache: 'none',
     })
-    void registration.update()
+    await registration.update()
   } catch (error) {
     console.error('离线缓存暂时无法启用：', error)
   }

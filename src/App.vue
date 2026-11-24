@@ -5,7 +5,7 @@ import ScreeningSession from './components/ScreeningSession.vue'
 import ReviewPanel from './components/ReviewPanel.vue'
 import PrintSheet from './components/PrintSheet.vue'
 import HomeDashboard from './components/HomeDashboard.vue'
-import type { LearningDictionaryId } from './domain/learningNamespace.ts'
+import { dictionaryLabel, type LearningDictionaryId } from './domain/learningNamespace.ts'
 
 function resolveView(hash: string) {
   if (hash === '#print' || hash === '#print-pending') return 'print'
@@ -30,26 +30,34 @@ function syncView() {
 onMounted(() => { window.addEventListener('hashchange', syncView); void scrollToAnchor() })
 onUnmounted(() => window.removeEventListener('hashchange', syncView))
 
-const netemBundle = ref<VocabularyBundle | null>(null)
-const cetBundle = ref<VocabularyBundle | null>(null)
-type DictionaryChoice = 'netem' | 'cet6'
+const dictionaries = {
+  netem: { id: 'netem-2024', prefix: '', name: 'NETEMVocabulary', edition: '2024 大纲整理版' },
+  cet6: { id: 'cet6-2016-curated', prefix: 'cet-', name: 'CETVocabulary', edition: '2016 年修订版来源' },
+  ielts: { id: 'ielts-ecdict', prefix: 'ielts-', name: 'ECDICT', edition: '雅思标签整理版' },
+} satisfies Record<string, { id: LearningDictionaryId; prefix: string; name: string; edition: string }>
+type DictionaryChoice = keyof typeof dictionaries
 const DICTIONARY_STORAGE_KEY = 'shici-selected-dictionary'
 function savedDictionary(): DictionaryChoice {
-  try { return localStorage.getItem(DICTIONARY_STORAGE_KEY) === 'cet6' ? 'cet6' : 'netem' }
+  try {
+    const value = localStorage.getItem(DICTIONARY_STORAGE_KEY)
+    return value && Object.hasOwn(dictionaries, value) ? value as DictionaryChoice : 'netem'
+  }
   catch { return 'netem' }
 }
 const selectedDictionary = ref<DictionaryChoice>(savedDictionary())
-const bundle = computed(() => selectedDictionary.value === 'netem' ? netemBundle.value : cetBundle.value)
-const activeDictionaryId = computed<LearningDictionaryId>(() => selectedDictionary.value === 'netem' ? 'netem-2024' : 'cet6-2016-curated')
-const cetError = ref('')
-const loading = ref(true)
-const error = ref('')
+const bundles = ref<Partial<Record<DictionaryChoice, VocabularyBundle>>>({})
+const errors = ref<Partial<Record<DictionaryChoice, string>>>({})
+const pendingLoads = new Set<DictionaryChoice>()
+const bundle = computed(() => bundles.value[selectedDictionary.value])
+const dictionary = computed(() => dictionaries[selectedDictionary.value])
+const activeDictionaryId = computed<LearningDictionaryId>(() => dictionary.value.id)
+const error = computed(() => errors.value[selectedDictionary.value])
 const query = ref('')
 const sort = ref('source')
 const page = ref(1)
 const pageSize = 20
 const tableTop = ref<HTMLElement | null>(null)
-const licenseUrl = computed(() => `${import.meta.env.BASE_URL}data/${selectedDictionary.value === 'netem' ? '' : 'cet-'}LICENSE.txt`)
+const licenseUrl = computed(() => `${import.meta.env.BASE_URL}data/${dictionary.value.prefix}LICENSE.txt`)
 function selectDictionary(dictionary: DictionaryChoice) {
   selectedDictionary.value = dictionary
   try { localStorage.setItem(DICTIONARY_STORAGE_KEY, dictionary) } catch { /* 仍可在本次打开期间切换 */ }
@@ -92,35 +100,25 @@ onMounted(() => {
 })
 onUnmounted(() => window.removeEventListener('keydown', handleZoomShortcut))
 
-async function loadVocabulary() {
-  loading.value = true
-  error.value = ''
+async function loadVocabulary(choice: DictionaryChoice) {
+  if (bundles.value[choice] || pendingLoads.has(choice)) return
+  pendingLoads.add(choice)
+  delete errors.value[choice]
+  const { id, prefix } = dictionaries[choice]
   try {
-    const response = await fetch(`${import.meta.env.BASE_URL}data/vocabulary.json`)
+    const response = await fetch(`${import.meta.env.BASE_URL}data/${prefix}vocabulary.json`)
     if (!response.ok) throw new Error(`HTTP ${response.status}`)
     const data = await response.json() as VocabularyBundle
-    if (data.schemaVersion !== 1 || !Array.isArray(data.words) || !data.source?.commit || !data.report || data.report.errorCount !== 0 || data.words.length !== data.report.importedCount) {
+    if (data.schemaVersion !== 1 || data.dictionaryId !== id || !Array.isArray(data.words) || !data.words.length ||
+      !data.source?.commit || !data.report || data.report.errorCount !== 0 || data.words.length !== data.report.importedCount ||
+      (choice === 'cet6' && data.words.length !== 4719)) {
       throw new Error('词库文件格式不正确')
     }
-    if (data.dictionaryId !== 'netem-2024') throw new Error('考研词库版本不正确')
-    netemBundle.value = data
+    bundles.value[choice] = data
   } catch {
-    error.value = '词库暂时无法读取，请重试。如果仍失败，请在项目目录运行 npm run import:vocabulary。'
+    errors.value[choice] = `${dictionaryLabel(id)}词库暂时无法读取，请重新加载或切换词库。`
   } finally {
-    loading.value = false
-  }
-  try {
-    const response = await fetch(`${import.meta.env.BASE_URL}data/cet-vocabulary.json`)
-    if (!response.ok) throw new Error(`HTTP ${response.status}`)
-    const data = await response.json() as VocabularyBundle
-    if (data.schemaVersion !== 1 || data.dictionaryId !== 'cet6-2016-curated' || !Array.isArray(data.words) ||
-      data.words.length !== 4719 || data.report.errorCount !== 0 || data.words.length !== data.report.importedCount) {
-      throw new Error('六级词库文件格式不正确')
-    }
-    cetBundle.value = data
-    cetError.value = ''
-  } catch {
-    cetError.value = '六级词库暂时无法读取，请刷新重试。考研学习记录不受影响。'
+    pendingLoads.delete(choice)
   }
 }
 
@@ -140,7 +138,7 @@ function turnPage(next: number) {
   tableTop.value?.scrollIntoView({ block: 'start' })
 }
 function browse() { document.getElementById('vocabulary')?.scrollIntoView({ behavior: 'smooth' }) }
-onMounted(loadVocabulary)
+watch(selectedDictionary, loadVocabulary, { immediate: true })
 </script>
 
 <template>
@@ -174,8 +172,7 @@ onMounted(loadVocabulary)
       </nav>
       <div class="content">
         <div v-if="view !== 'print'" class="dictionary-picker" role="group" aria-label="选择词库">
-          <button type="button" :class="{ selected: selectedDictionary === 'netem' }" :aria-pressed="selectedDictionary === 'netem'" @click="selectDictionary('netem')">考研词汇</button>
-          <button type="button" :class="{ selected: selectedDictionary === 'cet6' }" :aria-pressed="selectedDictionary === 'cet6'" @click="selectDictionary('cet6')">六级词汇</button>
+          <button v-for="(entry, choice) in dictionaries" :key="choice" type="button" :class="{ selected: selectedDictionary === choice }" :aria-pressed="selectedDictionary === choice" @click="selectDictionary(choice)">{{ dictionaryLabel(entry.id) }}词汇</button>
         </div>
         <section v-if="view === 'vocabulary'" class="intro">
           <div class="eyebrow">YOUR WORDS, YOUR PACE</div>
@@ -183,9 +180,8 @@ onMounted(loadVocabulary)
           <p>保留简短的核心释义，让每一次筛选都更轻松。</p>
         </section>
 
-        <div v-if="loading || (selectedDictionary === 'cet6' && !bundle && !cetError)" class="message-card" role="status">正在读取本地词库…</div>
-        <div v-else-if="selectedDictionary === 'netem' && error" class="message-card error" role="alert"><p>{{ error }}</p><button class="primary" @click="loadVocabulary">重新加载</button></div>
-        <div v-else-if="selectedDictionary === 'cet6' && cetError" class="message-card error" role="alert"><p>{{ cetError }}</p><button class="primary" @click="loadVocabulary">重新加载</button></div>
+        <div v-if="error" class="message-card error" role="alert"><p>{{ error }}</p><button class="primary" @click="loadVocabulary(selectedDictionary)">重新加载</button></div>
+        <div v-else-if="!bundle" class="message-card" role="status">正在读取本地词库…</div>
 
         <template v-else-if="bundle">
           <HomeDashboard :key="activeDictionaryId" v-show="view === 'home'" :words="bundle.words" :dictionary-version="bundle.contentVersion" :dictionary-id="activeDictionaryId" :active="view === 'home'" />
@@ -195,8 +191,8 @@ onMounted(loadVocabulary)
           <div v-show="view === 'vocabulary'">
           <section class="dictionary-card" aria-label="当前词库">
             <div class="dictionary-info">
-              <div class="pills"><span class="pill">当前词库</span><span class="source-tag">{{ selectedDictionary === 'netem' ? 'NETEMVocabulary' : 'CETVocabulary' }}</span></div>
-              <h2>{{ bundle.title }}<span class="edition">{{ selectedDictionary === 'netem' ? '2024 大纲整理版' : '2016 年修订版来源' }}</span></h2>
+              <div class="pills"><span class="pill">当前词库</span><span class="source-tag">{{ dictionary.name }}</span></div>
+              <h2>{{ bundle.title }}<span class="edition">{{ dictionary.edition }}</span></h2>
               <p>英文单词 + 简短中文释义，保留原始词表的简洁表达。</p>
               <button class="primary" @click="browse">浏览词库 <span aria-hidden="true">↗</span></button>
               <a class="secondary preview-entry" href="#screening">体验八选一题目 →</a>
@@ -226,11 +222,10 @@ onMounted(loadVocabulary)
           </section>
 
           <details class="source-details"><summary>词库来源与检查说明 <span>可追溯的原始数据</span></summary><div>
-            <p>来源：<a :href="bundle.source.repository" target="_blank" rel="noreferrer">exam-data / {{ selectedDictionary === 'netem' ? 'NETEMVocabulary' : 'CETVocabulary' }} ↗</a>，第三方按 {{ selectedDictionary === 'netem' ? '2024 年考研大纲' : '2016 年修订版四六级大纲' }}整理，尚未核对更新年份大纲。</p>
-            <p>固定快照：<code>{{ bundle.source.commit.slice(0, 12) }}</code>。数据采用 <a :href="licenseUrl" target="_blank" rel="noreferrer">{{ bundle.source.license }}</a> 许可，原始释义保持不变。</p>
+            <p>来源：<a :href="bundle.source.repository" target="_blank" rel="noreferrer">{{ dictionary.name }} ↗</a>。{{ selectedDictionary === 'ielts' ? '从 ECDICT 的雅思标签整理，释义取自对应词条。' : '由第三方按考试大纲整理，年份见词库标题。' }}</p>
+            <p>固定快照：<code>{{ bundle.source.commit.slice(0, 12) }}</code>。数据采用 <a :href="licenseUrl" target="_blank" rel="noreferrer">{{ bundle.source.license }}</a> 许可。</p>
             <p>原词库 {{ bundle.report.sourceCount.toLocaleString('en-US') }} 条，已按清单排除 {{ bundle.report.excludedCount ?? 0 }} 个词，当前保留 {{ bundle.words.length.toLocaleString('en-US') }} 条。</p>
-            <p v-if="selectedDictionary === 'netem'">全部 5,220 个词均可筛查，正确项和七个干扰项都直接取自原始词表。进度与错词自动保存在当前浏览器，支持错词复筛、导出和打印。</p>
-            <p v-else>全部 4,719 个六级词均可筛查，选项取自原表。六级的初筛、错词、复筛、备份和打印记录独立保存在当前设备。</p>
+            <p>全部 {{ bundle.words.length.toLocaleString('en-US') }} 词均可筛查，选项取自当前词库。筛查进度、错词与复筛记录按词库保存在本机。</p>
             <ul v-if="bundle.report.issues.length"><li v-for="(item, index) in bundle.report.issues" :key="index">{{ item.word }}：{{ item.message }}</li></ul>
           </div></details>
           </div>

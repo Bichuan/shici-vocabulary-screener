@@ -112,7 +112,9 @@ export function validateQuestions(questions: ScreeningQuestion[], words: Vocabul
 }
 
 function orderedWords(words: VocabularyWord[]) {
-  if (words.every(word => word.id.startsWith('cet:'))) return [...words].sort((a, b) => a.sourceOrder - b.sourceOrder)
+  if (words.every(word => word.id.startsWith('cet:') || word.id.startsWith('ielts:'))) {
+    return [...words].sort((a, b) => a.sourceOrder - b.sourceOrder)
+  }
   const legacyPosition = new Map<string, number>(LEGACY_SAMPLE_ORDER.map((spelling, index) => [spelling, index]))
   return [...words].sort((a, b) => {
     const ai = legacyPosition.get(a.spelling)
@@ -125,6 +127,8 @@ function orderedWords(words: VocabularyWord[]) {
 function chooseDistractors(target: VocabularyWord, words: VocabularyWord[], pools: Map<string, VocabularyWord[]>) {
   const selected: VocabularyWord[] = []
   const meanings = new Set([normalizeMeaning(target.meaning)])
+  const alternateMeanings = target.alternateMeanings
+  const targetForms = new Set([target.spelling, ...(target.inflections ?? [])].map(form => form.toLowerCase()))
   const add = (pool: VocabularyWord[], rejectOverlap: boolean) => {
     if (!pool.length || selected.length === 7) return
     const start = Math.abs(target.sourceOrder) % pool.length
@@ -132,6 +136,12 @@ function chooseDistractors(target: VocabularyWord, words: VocabularyWord[], pool
       const candidate = pool[(start + offset) % pool.length]!
       const meaning = normalizeMeaning(candidate.meaning)
       if (candidate.id === target.id || meanings.has(meaning) || hasSemanticConflict(target, candidate) || (rejectOverlap && overlapsMeaning(target.meaning, candidate.meaning))) continue
+      if (alternateMeanings && ([candidate.spelling, ...(candidate.inflections ?? [])].some(form => targetForms.has(form.toLowerCase())) ||
+        [target.meaning, ...alternateMeanings].some(text => {
+          const normalized = normalizeMeaning(text)
+          return overlapsMeaning(normalized, meaning) ||
+            (Math.min(normalized.length, meaning.length) >= 2 && (normalized.includes(meaning) || meaning.includes(normalized)))
+        }))) continue
       meanings.add(meaning)
       selected.push(candidate)
     }
@@ -139,8 +149,10 @@ function chooseDistractors(target: VocabularyWord, words: VocabularyWord[], pool
   if (target.subcategory) add(pools.get(`subcategory:${target.subcategory}`) ?? [], true)
   if (target.category) add(pools.get(`category:${target.category}`) ?? [], true)
   add(words, true)
-  if (selected.length < 7 && target.category) add(pools.get(`category:${target.category}`) ?? [], false)
-  if (selected.length < 7) add(words, false)
+  if (!alternateMeanings) {
+    if (selected.length < 7 && target.category) add(pools.get(`category:${target.category}`) ?? [], false)
+    if (selected.length < 7) add(words, false)
+  }
   if (selected.length !== 7) throw new Error(`词库中没有足够的不同原始释义为 ${target.spelling} 生成八选一题目`)
   return selected
 }

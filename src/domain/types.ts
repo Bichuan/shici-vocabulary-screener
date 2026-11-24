@@ -8,6 +8,8 @@ export interface VocabularyWord {
   alternateSpelling: string | null
   category: string | null
   subcategory: string | null
+  alternateMeanings?: string[]
+  inflections?: string[]
 }
 
 export interface VocabularySource {
@@ -16,7 +18,7 @@ export interface VocabularySource {
   fetchedAt: string
   sourceUrl: string
   sha256: string
-  syllabusYear: number
+  syllabusYear?: number
   license: string
 }
 

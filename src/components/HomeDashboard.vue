@@ -6,6 +6,7 @@ import { historicalWrongWords, readLearningBackup, restoreLearningBackup, valida
 import { dictionaryLabel, type LearningDictionaryId } from '../domain/learningNamespace.ts'
 
 const props = defineProps<{ words: VocabularyWord[]; dictionaryVersion: string; dictionaryId: LearningDictionaryId; active: boolean }>()
+const android = /android/i.test(navigator.userAgent)
 const answeredCount = ref(0)
 const wrongCount = ref(0)
 const loading = ref(false)
@@ -116,8 +117,19 @@ watch(() => props.active, active => { if (active) void loadSummary() }, { immedi
 
     <a class="home-vocabulary-link" href="#vocabulary">查看完整词库与数据来源 <span aria-hidden="true">→</span></a>
     <details class="install-guide" @toggle="revealInstallGuide">
-      <summary><span>添加到 iPhone 主屏幕</span><small>查看安装步骤</small></summary>
-      <div>
+      <summary><span>添加到 {{ android ? '安卓' : 'iPhone' }}主屏幕</span><small>查看安装步骤</small></summary>
+      <div v-if="android">
+        <ol>
+          <li>用安卓设备的 <strong>Chrome</strong> 打开拾词的网址。</li>
+          <li>点地址栏旁的 <strong>⋮</strong>，选择<strong>安装应用</strong>，或从<strong>添加到主屏幕</strong>进入安装。</li>
+          <li>按提示确认。之后从主屏幕上的「拾词」打开，也可以继续使用浏览器入口。</li>
+        </ol>
+        <p>请先联网打开，等应用缓存完成后再离线使用。可用飞行模式重新打开一次，确认词库能加载。</p>
+        <ul>
+          <li>学习记录保存在本机，可在「备份与恢复」中导出 JSON。</li>
+        </ul>
+      </div>
+      <div v-else>
         <ol>
           <li>用 iPhone 的 <strong>Safari</strong> 打开拾词的网址。</li>
           <li>点击 Safari 底部的<strong>分享按钮</strong>（方框向上箭头）。</li>
