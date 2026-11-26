@@ -1,0 +1,15 @@
+{
+  "name": "shici-usage",
+  "main": "worker.mjs",
+  "compatibility_date": "2026-11-26",
+  "vars": {
+    "SITE_ORIGIN": "https://bichuan.github.io"
+  },
+  "d1_databases": [
+    {
+      "binding": "USAGE",
+      "database_name": "shici-usage",
+      "database_id": "00000000-0000-0000-0000-000000000000"
+    }
+  ]
+}

@@ -7,6 +7,7 @@ import { questionSignature, type ScreeningSnapshot, type ScreeningStorage } from
 import { readLearningBackup, restoreLearningBackup, screeningBackupFileName, type LearningBackup } from '../domain/studyTools.ts'
 import { shareOrDownloadFile } from '../domain/fileTransfer.ts'
 import type { LearningDictionaryId } from '../domain/learningNamespace.ts'
+import { usageReportingEnabled } from '../domain/usageStats.ts'
 
 const props = defineProps<{ words: VocabularyWord[]; dictionaryVersion: string; dictionaryId: LearningDictionaryId; active: boolean; reviewQuestions?: ScreeningQuestion[]; storage?: ScreeningStorage; initialCount?: number }>()
 const emit = defineEmits<{ back: [] }>()
@@ -103,6 +104,7 @@ watch(question, async () => {
     <div class="screening-heading"><div><div class="eyebrow">ONE WORD AT A TIME</div><h1>这个词，是什么意思？</h1></div><span class="pill">{{ isReview ? '错词复筛' : `${questions.length} 词完整版` }}</span></div>
     <p class="preview-note">{{ isReview ? '只筛查之前答错的词，答对后移出待复筛列表。' : '全部选项均取自原始词表，词序按首字母交错随机。再次打开即可继续上次进度。' }}</p>
     <p class="save-status" role="status" aria-live="polite">{{ saveStatus }}</p>
+    <p v-if="usageReportingEnabled" class="preview-note">首次答题保存后，联网发送随机编号统计使用量。筛查记录保存在本机。</p>
     <p v-if="error" class="message-card error" role="alert">{{ error }}</p>
     <template v-else>
       <div v-if="phase === 'loading'" class="message-card" role="status">正在恢复学习进度…</div>

@@ -10,3 +10,4 @@ test-results/
 playwright-report/
 release/
 build/electron-dist/
+usage-stats/wrangler.local.jsonc

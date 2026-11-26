@@ -3,6 +3,7 @@ import type { AnswerRecord } from './types.ts'
 import { shuffleOptions, type ScreeningQuestion } from './questions.ts'
 import { createIndexedDBStorage, loadValidatedSnapshot, questionSignature, StorageConflict, type ScreeningSnapshot, type ScreeningStorage } from './screeningStorage.ts'
 import type { LearningDictionaryId } from './learningNamespace.ts'
+import { reportFirstUse } from './usageStats.ts'
 
 export interface SubmittedAnswer extends AnswerRecord {
   spelling: string
@@ -64,6 +65,7 @@ export function useScreening(questions: Ref<ScreeningQuestion[]>, dictionaryVers
     }))
     try {
       await repository!.save(snapshot, revision)
+      void reportFirstUse()
       if (disposed) return true
       records.value = snapshot.records
       revision = snapshot.revision
