@@ -15,7 +15,7 @@
 - 考研旧存档键保持原样；六级使用独立的初筛、复筛、恢复前副本和存储代次键。备份内容及新下载文件名标明词库，跨词库恢复会在写入前拒绝；没有词库标识的旧考研 JSON 备份仍可恢复到考研词库。
 - CSV 和打印可选择当前词库的全部历史错词或当前仍不会的词。两套词库各自保留进度，切换不会合并、重置或改写另一套记录。
 
-手机体验地址：**https://bichuan.github.io/shici-vocabulary-screener/**（GitHub Pages，HTTPS，无需自建服务器）。
+[打开拾词网页版](https://bichuan.github.io/shici-vocabulary-screener/)，由 GitHub Pages 提供 HTTPS 访问。
 
 ## 本地启动
 
