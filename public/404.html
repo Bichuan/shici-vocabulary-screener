@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5f6f0">
+  <meta name="robots" content="noindex">
+  <title>页面未找到 · 拾词</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: #f5f6f0;
+      color: #24382e;
+      font: 16px/1.6 system-ui, "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+    main { width: min(100% - 32px, 560px); margin: clamp(24px, 9vh, 96px) auto; }
+    .card { background: #fff; border: 1px solid #dce4d9; border-radius: 18px; padding: clamp(20px, 5vw, 36px); }
+    .brand { margin: 0; color: #2b593f; font-weight: 700; }
+    .code { color: #516759; font-weight: 500; }
+    h1 { margin: 12px 0 8px; font-size: clamp(25px, 5vw, 34px); line-height: 1.2; }
+    p { margin: 0 0 18px; }
+    .action {
+      display: inline-flex;
+      align-items: center;
+      min-height: 44px;
+      padding: 7px 14px;
+      border: 1px solid #aebfae;
+      border-radius: 9px;
+      background: #fff;
+      color: #26513c;
+      font: inherit;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .primary { background: #285b46; border-color: #285b46; color: #fff; }
+    .action[hidden] { display: none; }
+    details { margin-top: 20px; padding: 0 14px; border: 1px solid #dce4d9; border-radius: 10px; }
+    summary { padding: 10px 0; color: #26513c; cursor: pointer; font-weight: 600; }
+    .feedback { padding: 4px 0 14px; }
+    label { display: block; margin-bottom: 4px; font-weight: 600; }
+    textarea { width: 100%; min-height: 156px; resize: vertical; padding: 9px; border: 1px solid #aebfae; border-radius: 8px; color: inherit; font: inherit; }
+    .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+    .hint { margin: 8px 0 0; color: #4c6355; font-size: 14px; }
+    .hint:empty { display: none; }
+    :focus-visible { outline: 2px solid #285b46; outline-offset: 3px; }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="card" aria-labelledby="error-title">
+      <p class="brand">拾词 <span class="code">· 404</span></p>
+      <h1 id="error-title">找不到这个页面</h1>
+      <p>可以返回拾词首页。如果这个链接仍打不开，请反馈给我们。</p>
+      <a class="action primary" href="/shici-vocabulary-screener/">返回拾词首页</a>
+      <details>
+        <summary>反馈 404 问题</summary>
+        <div class="feedback">
+          <label for="report">反馈信息（可补充）</label>
+          <textarea id="report" rows="6" maxlength="480">拾词 404
+打开方式及遇到的问题：</textarea>
+          <div class="actions">
+            <button class="action" id="copy-report" type="button" hidden>复制反馈信息</button>
+            <a class="action" id="report-link" href="https://github.com/Bichuan/shici-vocabulary-screener/issues/new"
+              target="_blank" rel="noopener noreferrer">在 GitHub 反馈</a>
+          </div>
+          <p class="hint">可以把反馈信息发给分享链接的人，或登录 GitHub 后公开提交。</p>
+          <p class="hint" id="copy-status" role="status"></p>
+        </div>
+      </details>
+    </section>
+  </main>
+  <script>
+    const report = document.getElementById('report')
+    const copyButton = document.getElementById('copy-report')
+    const copyStatus = document.getElementById('copy-status')
+    const issueLink = document.getElementById('report-link')
+    const fromIcon = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true
+    // Omit search parameters and fragments. The draft stays in this page until the user acts.
+    const path = location.pathname.slice(0, 250)
+    report.value = [
+      '拾词 404',
+      `访问路径：${path}`,
+      `时间（UTC）：${new Date().toISOString()}`,
+      `入口：${fromIcon ? '主屏幕应用' : '浏览器'}`,
+      '',
+      '从哪里打开、使用的浏览器及遇到的问题：',
+    ].join('\n')
+
+    copyButton.hidden = false
+    copyButton.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(report.value)
+        copyStatus.textContent = '已复制反馈信息。'
+      } catch {
+        report.focus()
+        report.select()
+        copyStatus.textContent = '已选中反馈信息，请手动复制。'
+      }
+    })
+
+    const issueUrl = new URL(issueLink.href)
+    function prepareIssueLink() {
+      issueUrl.searchParams.set('title', '拾词 404 反馈')
+      issueUrl.searchParams.set('body', report.value.slice(0, 480))
+      issueLink.href = issueUrl.href
+    }
+    prepareIssueLink()
+    report.addEventListener('input', prepareIssueLink)
+  </script>
+</body>
+</html>

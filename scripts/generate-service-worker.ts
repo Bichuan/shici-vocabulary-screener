@@ -26,7 +26,8 @@ export function createServiceWorker(files: Array<{ path: string; content: Uint8A
 const CACHE_PREFIX = ${JSON.stringify(CACHE_PREFIX)};
 const CACHE_NAME = ${JSON.stringify(cacheName)};
 const PRECACHE_URLS = ${JSON.stringify(precacheUrls, null, 2)};
-const OFFLINE_ENTRY = new URL('index.html', self.registration.scope).href;
+const APP_SCOPE = new URL(self.registration.scope);
+const OFFLINE_ENTRY = new URL('index.html', APP_SCOPE);
 
 self.addEventListener('install', event => {
   event.waitUntil(
@@ -50,10 +51,13 @@ self.addEventListener('fetch', event => {
   event.respondWith((async () => {
     const cache = await caches.open(CACHE_NAME);
     if (request.mode === 'navigate') {
-      const entry = await cache.match(OFFLINE_ENTRY);
+      const entry = await cache.match(OFFLINE_ENTRY.href);
       try {
         const response = await fetch(request, { cache: 'no-store' });
         if (response.ok) return response;
+        // Let the host show its feedback page for invalid links, while the app
+        // entry points still get the cached shell on a temporary server error.
+        if (response.status === 404 && url.pathname !== APP_SCOPE.pathname && url.pathname !== OFFLINE_ENTRY.pathname) return response;
       } catch { /* Use the complete offline version when the network fails. */ }
       return entry || fetch(request);
     }
@@ -74,7 +78,8 @@ self.addEventListener('fetch', event => {
 
 export function generateServiceWorker(outputDirectory: string, currentBundleFiles: readonly string[] = []) {
   const currentBundle = new Set(currentBundleFiles.map(path => path.split(sep).join('/')))
-  const paths = listFiles(outputDirectory).filter(path => !path.startsWith('assets/') || currentBundle.has(path))
+  const paths = listFiles(outputDirectory).filter(path =>
+    path !== '404.html' && (!path.startsWith('assets/') || currentBundle.has(path)))
   const generated = createServiceWorker(paths.map(path => ({ path, content: readFileSync(join(outputDirectory, path)) })))
   writeFileSync(join(outputDirectory, WORKER_FILE), generated.source, 'utf8')
   return generated
